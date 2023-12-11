@@ -1,0 +1,10 @@
+{
+    "ssid": "you-wifi-ssid",
+    "wifi-password": "your-wifi-password",
+    "api-endpoint": "nightscout-api-endpoint",
+    "api-token": "nightscout-api-endpoint",
+    "locale": "en-US",
+    "interval": 60, //nightscout api query interval
+    "min": 75, //minimal safe glucose level
+    "max": 180 //maximal safe glucose level
+}
