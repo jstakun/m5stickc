@@ -4,7 +4,45 @@ import time
 import ujson
 import sys
 import _thread
+import utime
 from machine import Pin
+import usocket as socket
+import ustruct as struct
+
+def currentTime():
+    NTP_QUERY = bytearray(48)
+    NTP_QUERY[0] = 0x1B
+    addr = socket.getaddrinfo("pool.ntp.org", 123)[0][-1]
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    try:
+        s.settimeout(1)
+        res = s.sendto(NTP_QUERY, addr)
+        msg = s.recv(48)
+    finally:
+        s.close()
+    val = struct.unpack("!I", msg[40:44])[0]
+    EPOCH_YEAR = utime.localtime(0)[0]
+    if EPOCH_YEAR == 2000:
+        # (date(2000, 1, 1) - date(1900, 1, 1)).days * 24*60*60
+        NTP_DELTA = 3155673600
+    elif EPOCH_YEAR == 1970:
+        # (date(1970, 1, 1) - date(1900, 1, 1)).days * 24*60*60
+        NTP_DELTA = 2208988800
+    else:
+        raise Exception("Unsupported epoch: {}".format(EPOCH_YEAR))
+    return val - NTP_DELTA
+
+def isOlderThanHour(date_str): 
+  global rtc
+  [yyyy, mm, dd] = [int(i) for i in date_str.split('T')[0].split('-')]
+  [HH, MM, SS] = [int(i) for i in date_str.split('T')[1].split(':')]
+  the_date = (yyyy, mm, dd, HH, MM, SS, 0, 0, 0)
+  seconds = utime.mktime(the_date) #UTC+1
+  now = utime.time() #UTC
+  #print(str(rtc.datetime()) + " " + str(the_date))
+  diff = (now - seconds)
+  print('This entry is ' + str(diff) + ' seconds old')
+  return diff > 0  
 
 def getBatteryLevel():
   volt = axp.getBatVoltage()
@@ -41,7 +79,14 @@ def printScreen():
   else: dateStr = response['date']
   directionStr = response['direction']
 
-  if sgv <= MIN: backgroundColor=lcd.RED; lcd.clear(backgroundColor); lcd.setTextColor(lcd.WHITE); M5Led.on()
+  olderThanHour = False
+  try:
+    olderThanHour = isOlderThanHour(response['date'])
+  except Exception as e:
+    sys.print_exception(e)
+     
+  if olderThanHour: backgroundColor=lcd.DARKGREY; lcd.clear(backgroundColor); lcd.setTextColor(lcd.WHITE); M5Led.on()
+  elif sgv <= MIN: backgroundColor=lcd.RED; lcd.clear(backgroundColor); lcd.setTextColor(lcd.WHITE); M5Led.on()
   elif sgv > MIN and sgv <= MAX: backgroundColor=lcd.DARKGREEN; lcd.clear(backgroundColor); lcd.setTextColor(lcd.WHITE); M5Led.off() 
   else: backgroundColor=lcd.ORANGE; lcd.clear(backgroundColor); lcd.setTextColor(lcd.WHITE); M5Led.on()
   
@@ -156,6 +201,11 @@ msg = "Loading data..."
 w = lcd.textWidth(msg)
 lcd.text(54+lcd.fontSize()[1], (int)((241-w)/2), msg)
 
+print('Setting time...')
+rtc = machine.RTC()
+tm = utime.localtime(currentTime())
+rtc.datetime((tm[0], tm[1], tm[2], tm[6] + 1, tm[3], tm[4], tm[5], 0))
+print("Current time " +  str(rtc.datetime()) )
 _thread.start_new_thread(callBackend, ())
 
 btnM5 = Pin(37, Pin.IN)
