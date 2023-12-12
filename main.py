@@ -10,27 +10,27 @@ import usocket as socket
 import ustruct as struct
 
 def currentTime():
-    NTP_QUERY = bytearray(48)
-    NTP_QUERY[0] = 0x1B
-    addr = socket.getaddrinfo("pool.ntp.org", 123)[0][-1]
-    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    try:
-        s.settimeout(1)
-        res = s.sendto(NTP_QUERY, addr)
-        msg = s.recv(48)
-    finally:
-        s.close()
-    val = struct.unpack("!I", msg[40:44])[0]
-    EPOCH_YEAR = utime.localtime(0)[0]
-    if EPOCH_YEAR == 2000:
-        # (date(2000, 1, 1) - date(1900, 1, 1)).days * 24*60*60
-        NTP_DELTA = 3155673600
-    elif EPOCH_YEAR == 1970:
-        # (date(1970, 1, 1) - date(1900, 1, 1)).days * 24*60*60
-        NTP_DELTA = 2208988800
-    else:
-        raise Exception("Unsupported epoch: {}".format(EPOCH_YEAR))
-    return val - NTP_DELTA
+  NTP_QUERY = bytearray(48)
+  NTP_QUERY[0] = 0x1B
+  addr = socket.getaddrinfo("pool.ntp.org", 123)[0][-1]
+  s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+  try:
+      s.settimeout(1)
+      res = s.sendto(NTP_QUERY, addr)
+      msg = s.recv(48)
+  finally:
+      s.close()
+  val = struct.unpack("!I", msg[40:44])[0]
+  EPOCH_YEAR = utime.localtime(0)[0]
+  if EPOCH_YEAR == 2000:
+      # (date(2000, 1, 1) - date(1900, 1, 1)).days * 24*60*60
+      NTP_DELTA = 3155673600
+  elif EPOCH_YEAR == 1970:
+      # (date(1970, 1, 1) - date(1900, 1, 1)).days * 24*60*60
+      NTP_DELTA = 2208988800
+  else:
+      raise Exception("Unsupported epoch: {}".format(EPOCH_YEAR))
+  return val - NTP_DELTA
 
 def isOlderThanHour(date_str): 
   global rtc
@@ -40,9 +40,9 @@ def isOlderThanHour(date_str):
   seconds = utime.mktime(the_date) #UTC+1
   now = utime.time() #UTC
   #print(str(rtc.datetime()) + " " + str(the_date))
-  diff = (now - seconds)
-  print('This entry is ' + str(diff) + ' seconds old')
-  return diff > 0  
+  diff = (now - seconds + 3600)
+  print('Current entry is ' + str(diff) + ' seconds old')
+  return diff > 3600  
 
 def getBatteryLevel():
   volt = axp.getBatVoltage()
