@@ -71,7 +71,7 @@ def getBatteryLevel():
   if volt >= 4.20: return 101
 
 def printScreen():
-  global response, mode, brightness, emergency, MIN, MAX, EMERGENCY_MIN, EMERGENCY_MAX
+  global response, mode, brightness, emergency, emergencyPause, MIN, MAX, EMERGENCY_MIN, EMERGENCY_MAX
 
   sgv = response['sgv']
   sgvStr = str(response['sgv'])
@@ -88,12 +88,12 @@ def printScreen():
   axp.setLcdBrightness(brightness)
 
   if olderThanHour: backgroundColor=lcd.DARKGREY; lcd.clear(backgroundColor); lcd.setTextColor(lcd.WHITE); M5Led.on(); emergency=False
-  elif sgv <= EMERGENCY_MIN: backgroundColor=lcd.RED; lcd.clear(backgroundColor); lcd.setTextColor(lcd.WHITE); M5Led.on(); emergency=True
+  elif sgv <= EMERGENCY_MIN: backgroundColor=lcd.RED; lcd.clear(backgroundColor); lcd.setTextColor(lcd.WHITE); M5Led.on(); emergency=(utime.time() > emergencyPause)
   elif sgv > EMERGENCY_MIN and sgv <= MIN: backgroundColor=lcd.RED; lcd.clear(backgroundColor); lcd.setTextColor(lcd.WHITE); M5Led.on(); emergency=False
   elif sgv > MIN and sgv <= MAX: backgroundColor=lcd.DARKGREEN; lcd.clear(backgroundColor); lcd.setTextColor(lcd.WHITE); emergency=False; M5Led.off() 
   elif sgv > MAX and sgv <= EMERGENCY_MAX: backgroundColor=lcd.ORANGE; lcd.clear(backgroundColor); lcd.setTextColor(lcd.WHITE); M5Led.on(); emergency=False
-  elif sgv > EMERGENCY_MAX: backgroundColor=lcd.ORANGE; lcd.clear(backgroundColor); lcd.setTextColor(lcd.WHITE); M5Led.on(); emergency=True;  
-  
+  elif sgv > EMERGENCY_MAX: backgroundColor=lcd.ORANGE; lcd.clear(backgroundColor); lcd.setTextColor(lcd.WHITE); M5Led.on(); emergency=(utime.time() > emergencyPause)  
+
   if mode == 0:  
     #full mode
     #sgv
@@ -156,6 +156,7 @@ def onBtnAPressed():
   global mode, MODES, emergency 
   if emergency == True:
     emergency = False
+    emergencyPause = utime.time() + 1800 #30 mins
   else:   
     if mode == 2: mode = 0
     elif mode < 2: mode += 1 
@@ -166,11 +167,14 @@ def onBtnBPressed():
   global emergency
   if emergency == True:
     emergency = False
+    emergencyPause = utime.time() + 1800 #30 mins
   else:   
     global brightness
     brightness += 16
     if brightness > 96: brightness = 16
     axp.setLcdBrightness(brightness)
+
+########################################    
 
 confFile = open('config.json', 'r')
 config = ujson.loads(confFile.read())
@@ -191,6 +195,7 @@ mode = 0
 response = {}
 brightness = 32
 emergency = False
+emergencyPause = 0
 
 beeper = PWM(Pin(2), freq=1000, duty=50)
 beeper.pause()
