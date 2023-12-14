@@ -175,10 +175,10 @@ def onBtnBPressed():
     axp.setLcdBrightness(brightness)
 
 def emergencyMonitor():
-  global emergency, beeper
+  global emergency, beeper, response
   while True:
     if emergency:
-      print('Emergency glucose level !!!')
+      print('Emergency glucose level ' + str(response['sgv']) + '!!!')
       beeper.resume()
       M5Led.on()
       time.sleep(0.5)
@@ -186,6 +186,7 @@ def emergencyMonitor():
       M5Led.off()
       time.sleep(0.5)
     else:
+      #print('No emergency')
       beeper.pause()
       time.sleep(1)
 
@@ -254,9 +255,10 @@ rtc = machine.RTC()
 tm = utime.localtime(currentTime())
 rtc.datetime((tm[0], tm[1], tm[2], tm[6] + 1, tm[3], tm[4], tm[5], 0))
 print("Current time " +  str(rtc.datetime()))
+
 _thread.start_new_thread(callBackend, ())
+_thread.start_new_thread(emergencyMonitor, ())
 
 btnA.wasPressed(onBtnAPressed)
 btnB.wasPressed(onBtnBPressed)
 
-_thread.start_new_thread(emergencyMonitor, ())
