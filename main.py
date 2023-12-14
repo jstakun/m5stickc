@@ -226,7 +226,7 @@ print('Setting time...')
 rtc = machine.RTC()
 tm = utime.localtime(currentTime())
 rtc.datetime((tm[0], tm[1], tm[2], tm[6] + 1, tm[3], tm[4], tm[5], 0))
-print("Current time " +  str(rtc.datetime()) )
+print("Current time " +  str(rtc.datetime()))
 _thread.start_new_thread(callBackend, ())
 
 btnA.wasPressed(onBtnAPressed)
@@ -234,6 +234,7 @@ btnB.wasPressed(onBtnBPressed)
 
 while True:
   if emergency:
+    print('Emergency glucose level !!!')
     beeper.resume()
     M5Led.on()
     time.sleep(0.5)
