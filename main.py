@@ -153,17 +153,24 @@ def callBackend():
       time.sleep(retry)
 
 def onBtnAPressed():
-  global mode, MODES 
-  if mode == 2: mode = 0
-  elif mode < 2: mode += 1 
-  print('Selected mode ' + MODES[mode])
-  printScreen()
+  global mode, MODES, emergency 
+  if emergency == True:
+    emergency = False
+  else:   
+    if mode == 2: mode = 0
+    elif mode < 2: mode += 1 
+    print('Selected mode ' + MODES[mode])
+    printScreen()
 
 def onBtnBPressed():
-  global brightness
-  brightness += 16
-  if brightness > 96: brightness = 16
-  axp.setLcdBrightness(brightness)
+  global emergency
+  if emergency == True:
+    emergency = False
+  else:   
+    global brightness
+    brightness += 16
+    if brightness > 96: brightness = 16
+    axp.setLcdBrightness(brightness)
 
 confFile = open('config.json', 'r')
 config = ujson.loads(confFile.read())
