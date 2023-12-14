@@ -176,8 +176,8 @@ LOCALE = config["locale"]
 INTERVAL = config["interval"]
 MIN = config["min"]
 MAX = config["max"]
-EMERGENCY_MIN = ["emergencyMin"]
-EMERGENCY_MAX = ["emergencyMax"] 
+EMERGENCY_MIN = config["emergencyMin"]
+EMERGENCY_MAX = config["emergencyMax"] 
 
 MODES = ["full", "basic", "battery"]
 mode = 0
@@ -228,9 +228,6 @@ tm = utime.localtime(currentTime())
 rtc.datetime((tm[0], tm[1], tm[2], tm[6] + 1, tm[3], tm[4], tm[5], 0))
 print("Current time " +  str(rtc.datetime()) )
 _thread.start_new_thread(callBackend, ())
-
-#btnM5 = Pin(37, Pin.IN)
-#btnM5.irq(trigger=Pin.IRQ_RISING, handler=onBtnWasPressed)
 
 btnA.wasPressed(onBtnAPressed)
 btnB.wasPressed(onBtnBPressed)
