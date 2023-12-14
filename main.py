@@ -174,6 +174,21 @@ def onBtnBPressed():
     if brightness > 96: brightness = 16
     axp.setLcdBrightness(brightness)
 
+def emergencyMonitor():
+  global emergency, beeper
+  while True:
+    if emergency:
+      print('Emergency glucose level !!!')
+      beeper.resume()
+      M5Led.on()
+      time.sleep(0.5)
+      beeper.pause()
+      M5Led.off()
+      time.sleep(0.5)
+    else:
+      beeper.pause()
+      time.sleep(1)
+
 ########################################    
 
 confFile = open('config.json', 'r')
@@ -244,15 +259,4 @@ _thread.start_new_thread(callBackend, ())
 btnA.wasPressed(onBtnAPressed)
 btnB.wasPressed(onBtnBPressed)
 
-while True:
-  if emergency:
-    print('Emergency glucose level !!!')
-    beeper.resume()
-    M5Led.on()
-    time.sleep(0.5)
-    beeper.pause()
-    M5Led.off()
-    time.sleep(0.5)
-  else:
-    beeper.pause()
-    time.sleep(1)
+_thread.start_new_thread(emergencyMonitor, ())
