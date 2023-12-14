@@ -5,7 +5,7 @@ import ujson
 import sys
 import _thread
 import utime
-from machine import Pin
+from machine import Pin, PWM
 import usocket as socket
 import ustruct as struct
 
@@ -71,7 +71,7 @@ def getBatteryLevel():
   if volt >= 4.20: return 101
 
 def printScreen():
-  global response, mode, MIN, MAX
+  global response, mode, brightness, emergency, MIN, MAX, EMERGENCY_MIN, EMERGENCY_MAX
 
   sgv = response['sgv']
   sgvStr = str(response['sgv'])
@@ -84,20 +84,26 @@ def printScreen():
     olderThanHour = isOlderThanHour(response['date'])
   except Exception as e:
     sys.print_exception(e)
-     
-  if olderThanHour: backgroundColor=lcd.DARKGREY; lcd.clear(backgroundColor); lcd.setTextColor(lcd.WHITE); M5Led.on()
-  elif sgv <= MIN: backgroundColor=lcd.RED; lcd.clear(backgroundColor); lcd.setTextColor(lcd.WHITE); M5Led.on()
-  elif sgv > MIN and sgv <= MAX: backgroundColor=lcd.DARKGREEN; lcd.clear(backgroundColor); lcd.setTextColor(lcd.WHITE); M5Led.off() 
-  else: backgroundColor=lcd.ORANGE; lcd.clear(backgroundColor); lcd.setTextColor(lcd.WHITE); M5Led.on()
+
+  axp.setLcdBrightness(brightness)
+
+  if olderThanHour: backgroundColor=lcd.DARKGREY; lcd.clear(backgroundColor); lcd.setTextColor(lcd.WHITE); M5Led.on(); emergency=False
+  elif sgv <= EMERGENCY_MIN: backgroundColor=lcd.RED; lcd.clear(backgroundColor); lcd.setTextColor(lcd.WHITE); M5Led.on(); emergency=True
+  elif sgv > EMERGENCY_MIN and sgv <= MIN: backgroundColor=lcd.RED; lcd.clear(backgroundColor); lcd.setTextColor(lcd.WHITE); M5Led.on(); emergency=False
+  elif sgv > MIN and sgv <= MAX: backgroundColor=lcd.DARKGREEN; lcd.clear(backgroundColor); lcd.setTextColor(lcd.WHITE); emergency=False; M5Led.off() 
+  elif sgv > MAX and sgv <= EMERGENCY_MAX: backgroundColor=lcd.ORANGE; lcd.clear(backgroundColor); lcd.setTextColor(lcd.WHITE); M5Led.on(); emergency=False
+  elif sgv > EMERGENCY_MAX: backgroundColor=lcd.ORANGE; lcd.clear(backgroundColor); lcd.setTextColor(lcd.WHITE); M5Led.on(); emergency=True;  
   
   if mode == 0:  
     #full mode
     #sgv
-    lcd.text((int)(136-48+(lcd.fontSize()[1]/2)), 44, sgvStr)
+    if sgv < 100: sgvStr = " " + sgvStr
+    lcd.font(lcd.FONT_DejaVu56, rotate=90)
+    lcd.text((int)(136-48+(lcd.fontSize()[1]/2)), 24, sgvStr)
 
     #direction
     x=88
-    y=156
+    y=176
     lcd.circle(x, y, 40, fillcolor=lcd.WHITE)
     
     if directionStr == 'Flat':
@@ -118,10 +124,12 @@ def printScreen():
       print("Unknown direction: " + directionStr)
 
     #ago or date
+    lcd.font(lcd.FONT_DejaVu24, rotate=90)
     w = lcd.textWidth(dateStr)
     lcd.text(12+lcd.fontSize()[1], (int)((241-w)/2), dateStr)
   elif mode == 2:
     #battery mode
+    lcd.font(lcd.FONT_DejaVu24, rotate=90)
     msg = 'Battery: ' + str(getBatteryLevel()) + '%'
     w = lcd.textWidth(msg)
     lcd.text(54+lcd.fontSize()[1], (int)((241-w)/2), msg)
@@ -144,12 +152,18 @@ def callBackend():
       print('Network error. Retry in ' + str(retry) + ' sec...')
       time.sleep(retry)
 
-def onBtnWasPressed(p):
+def onBtnAPressed():
   global mode, MODES 
-  if mode==2: mode = 0
-  elif mode<2: mode += 1 
-  print('Selected mode ' + MODES[mode] + ' with button ', p)
+  if mode == 2: mode = 0
+  elif mode < 2: mode += 1 
+  print('Selected mode ' + MODES[mode])
   printScreen()
+
+def onBtnBPressed():
+  global brightness
+  brightness += 16
+  if brightness > 96: brightness = 16
+  axp.setLcdBrightness(brightness)
 
 confFile = open('config.json', 'r')
 config = ujson.loads(confFile.read())
@@ -162,15 +176,22 @@ LOCALE = config["locale"]
 INTERVAL = config["interval"]
 MIN = config["min"]
 MAX = config["max"]
+EMERGENCY_MIN = ["emergencyMin"]
+EMERGENCY_MAX = ["emergencyMax"] 
 
 MODES = ["full", "basic", "battery"]
 mode = 0
 response = {}
+brightness = 32
+emergency = False
 
+beeper = PWM(Pin(2), freq=1000, duty=50)
+beeper.pause()
+
+axp.setLcdBrightness(brightness)
 lcd.clear(lcd.WHITE)
 lcd.setTextColor(lcd.WHITE)
 lcd.font(lcd.FONT_DejaVu24, rotate=90)
-lcd.orient(lcd.PORTRAIT)
 
 nic = network.WLAN(network.STA_IF)
 nic.active(True)
@@ -196,7 +217,7 @@ while not nic.isconnected():
   print(".", end="")
   time.sleep(0.25)
 
-lcd.clear(lcd.DARKGREEN)
+lcd.clear(lcd.GREENYELLOW)
 msg = "Loading data..."
 w = lcd.textWidth(msg)
 lcd.text(54+lcd.fontSize()[1], (int)((241-w)/2), msg)
@@ -208,5 +229,20 @@ rtc.datetime((tm[0], tm[1], tm[2], tm[6] + 1, tm[3], tm[4], tm[5], 0))
 print("Current time " +  str(rtc.datetime()) )
 _thread.start_new_thread(callBackend, ())
 
-btnM5 = Pin(37, Pin.IN)
-btnM5.irq(trigger=Pin.IRQ_RISING, handler=onBtnWasPressed)
+#btnM5 = Pin(37, Pin.IN)
+#btnM5.irq(trigger=Pin.IRQ_RISING, handler=onBtnWasPressed)
+
+btnA.wasPressed(onBtnAPressed)
+btnB.wasPressed(onBtnBPressed)
+
+while True:
+  if emergency:
+    beeper.resume()
+    M5Led.on()
+    time.sleep(0.5)
+    beeper.pause()
+    M5Led.off()
+    time.sleep(0.5)
+  else:
+    beeper.pause()
+    time.sleep(1)
