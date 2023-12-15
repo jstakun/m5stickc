@@ -109,7 +109,7 @@ def printScreen():
     if directionStr == 'Flat':
       lcd.triangle(x-20, y-15, x+20, y-15, x, y+25, fillcolor=backgroundColor, color=backgroundColor)
     elif directionStr == 'FortyFiveDown' or directionStr == 'FortyFiveUp':
-      lcd.triangle(x-20, y+15, x+25, y+15, x, y-27, fillcolor=backgroundColor, color=backgroundColor)
+      lcd.triangle(x-22, y+15, x+22, y+15, x, y-27, fillcolor=backgroundColor, color=backgroundColor)
     elif directionStr == 'DoubleDown': 
       lcd.triangle(x+25, y-20, x+25, y+20, x-10, y, fillcolor=lcd.RED, color=lcd.RED)
       lcd.triangle(x, y-20, x, y+20, x-30, y, fillcolor=lcd.RED, color=lcd.RED)
@@ -195,8 +195,7 @@ def emergencyMonitor():
 confFile = open('config.json', 'r')
 config = ujson.loads(confFile.read())
 
-SSID = config["ssid"]
-WIFI_PASSWORD = config["wifi-password"]
+WIFI = config["wifi"]
 API_ENDPOINT = config["api-endpoint"]
 API_TOKEN = config["api-token"]
 LOCALE = config["locale"]
@@ -232,8 +231,9 @@ found = False
 while not found:
  nets = nic.scan()
  for result in nets:
-   if result[0].decode() == SSID: found = True; break
- time.sleep(0.25)
+   ssid = result[0].decode() 
+   if ssid in WIFI: found = True; SSID=ssid; WIFI_PASSWORD=WIFI[ssid]; break
+ if not found: time.sleep(1)
 
 lcd.clear(lcd.OLIVE)
 msg = "Connecting wifi..."
