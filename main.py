@@ -139,7 +139,7 @@ def callBackend():
   while True:
     try:
       print('Battery level: ' + str(getBatteryLevel()) + '%')
-      response = urequests.get(API_ENDPOINT + "/1/api/v1/entries.json?count=1",headers={'api-secret': API_TOKEN,'accept-language': LOCALE}).json()
+      response = urequests.get(API_ENDPOINT + "/1/api/v1/entries.json?count=1",headers={'api-secret': API_TOKEN,'accept-language': LOCALE,'accept-charset': 'ascii'}).json()
       print('Sgv: ', response['sgv'])
       print('Read: ', response['date'])
       print('Direction: ', response['direction'])
