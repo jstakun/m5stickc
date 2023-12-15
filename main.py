@@ -98,41 +98,41 @@ def printScreen():
     #full mode
     #sgv
     if sgv < 100: sgvStr = " " + sgvStr
-    lcd.font(lcd.FONT_DejaVu56, rotate=90)
-    lcd.text((int)(136-48+(lcd.fontSize()[1]/2)), 24, sgvStr)
+    lcd.font(lcd.FONT_DejaVu56, rotate=0)
+    lcd.text(12, 24, sgvStr)
 
     #direction
-    x=88
-    y=176
+    x=178
+    y=48
     lcd.circle(x, y, 40, fillcolor=lcd.WHITE)
     
     if directionStr == 'Flat':
-      lcd.triangle(x-20, y-15, x+20, y-15, x, y+25, fillcolor=backgroundColor, color=backgroundColor)
+      lcd.triangle(x-15, y-20, x-15, y+20, x+25, y, fillcolor=backgroundColor, color=backgroundColor)
     elif directionStr == 'FortyFiveDown' or directionStr == 'FortyFiveUp':
-      lcd.triangle(x-22, y+15, x+22, y+15, x, y-27, fillcolor=backgroundColor, color=backgroundColor)
+      lcd.triangle(x+15, y-20, x+15, y+20, x-25, y, fillcolor=backgroundColor, color=backgroundColor)
     elif directionStr == 'DoubleDown': 
-      lcd.triangle(x+25, y-20, x+25, y+20, x-10, y, fillcolor=lcd.RED, color=lcd.RED)
-      lcd.triangle(x, y-20, x, y+20, x-30, y, fillcolor=lcd.RED, color=lcd.RED)
+      lcd.triangle(x-20, y, x+20, y, x, y+30, fillcolor=lcd.RED, color=lcd.RED)
+      lcd.triangle(x-20, y-25, x+20, y-25, x, y+10, fillcolor=lcd.RED, color=lcd.RED)
     elif directionStr == 'DoubleUp':
-      lcd.triangle(x, y-20, x, y+20, x+30, y, fillcolor=lcd.RED, color=lcd.RED)
-      lcd.triangle(x-25, y-20, x-25, y+20, x+5, y, fillcolor=lcd.RED, color=lcd.RED)
+      lcd.triangle(x-20, y+18, x+20, y+18, x, y-7, fillcolor=lcd.RED, color=lcd.RED)
+      lcd.triangle(x-20, y-5, x+20, y-5, x, y-30, fillcolor=lcd.RED, color=lcd.RED)
     elif directionStr == 'SingleUp':
-      lcd.triangle(x-15, y-20, x-15, y+20, x+25, y, fillcolor=lcd.ORANGE, color=lcd.ORANGE)
+      lcd.triangle(x-20, y+15, x+20, y+15, x, y-25, fillcolor=lcd.ORANGE, color=lcd.ORANGE)
     elif directionStr == 'SingleDown':
-      lcd.triangle(x+15, y-20, x+15, y+20, x-25, y, fillcolor=lcd.ORANGE, color=lcd.ORANGE)
+      lcd.triangle(x-20, y-15, x+20, y-15, x, y+25, fillcolor=lcd.ORANGE, color=lcd.ORANGE)
     else:
       print("Unknown direction: " + directionStr)
 
     #ago or date
-    lcd.font(lcd.FONT_DejaVu24, rotate=90)
+    lcd.font(lcd.FONT_DejaVu24, rotate=0)
     w = lcd.textWidth(dateStr)
-    lcd.text(12+lcd.fontSize()[1], (int)((241-w)/2), dateStr)
+    lcd.text((int)((240-w)/2), 100, dateStr)
   elif mode == 2:
     #battery mode
-    lcd.font(lcd.FONT_DejaVu24, rotate=90)
+    lcd.font(lcd.FONT_DejaVu24, rotate=0)
     msg = 'Battery: ' + str(getBatteryLevel()) + '%'
     w = lcd.textWidth(msg)
-    lcd.text(54+lcd.fontSize()[1], (int)((241-w)/2), msg)
+    lcd.text((int)((240-w)/2), 54, msg)
 
 def callBackend():
   global response, INTERVAL, API_ENDPOINT, API_TOKEN, LOCALE
@@ -218,7 +218,8 @@ beeper.pause()
 axp.setLcdBrightness(brightness)
 lcd.clear(lcd.WHITE)
 lcd.setTextColor(lcd.WHITE)
-lcd.font(lcd.FONT_DejaVu24, rotate=90)
+lcd.orient(lcd.LANDSCAPE)
+lcd.font(lcd.FONT_DejaVu24, rotate=0)
 
 nic = network.WLAN(network.STA_IF)
 nic.active(True)
@@ -226,19 +227,26 @@ nic.active(True)
 lcd.clear(lcd.DARKGREY)
 msg = "Scanning wifi..."
 w = lcd.textWidth(msg)
-lcd.text(54+lcd.fontSize()[1], (int)((241-w)/2), msg)
+lcd.text((int)((240-w)/2), 54, msg)
 found = False
 while not found:
- nets = nic.scan()
- for result in nets:
-   ssid = result[0].decode() 
-   if ssid in WIFI: found = True; SSID=ssid; WIFI_PASSWORD=WIFI[ssid]; break
- if not found: time.sleep(1)
+  try: 
+    nets = nic.scan()
+    for result in nets:
+      ssid = result[0].decode() 
+      if ssid in WIFI: found = True; SSID=ssid; WIFI_PASSWORD=WIFI[ssid]; break
+  except Exception as e:
+      sys.print_exception(e)
+      lcd.clear(lcd.DARKGREY)
+      msg = "Saved wifi not found!"
+      w = lcd.textWidth(msg)
+      lcd.text((int)((240-w)/2), 54, msg)         
+  if not found: time.sleep(1)
 
 lcd.clear(lcd.OLIVE)
 msg = "Connecting wifi..."
 w = lcd.textWidth(msg)
-lcd.text(54+lcd.fontSize()[1], (int)((241-w)/2), msg)
+lcd.text((int)((240-w)/2), 54, msg)
 nic.connect(SSID, WIFI_PASSWORD)
 print('Connecting wifi ' + SSID)
 while not nic.isconnected():
@@ -248,17 +256,23 @@ while not nic.isconnected():
 lcd.clear(lcd.GREENYELLOW)
 msg = "Loading data..."
 w = lcd.textWidth(msg)
-lcd.text(54+lcd.fontSize()[1], (int)((241-w)/2), msg)
+lcd.text((int)((240-w)/2), 54, msg)
 
-print('Setting time...')
-rtc = machine.RTC()
-tm = utime.localtime(currentTime())
-rtc.datetime((tm[0], tm[1], tm[2], tm[6] + 1, tm[3], tm[4], tm[5], 0))
-print("Current time " +  str(rtc.datetime()))
+try: 
+  print('Setting time...')
+  rtc = machine.RTC()
+  tm = utime.localtime(currentTime())
+  rtc.datetime((tm[0], tm[1], tm[2], tm[6] + 1, tm[3], tm[4], tm[5], 0))
+  print("Current time " +  str(rtc.datetime()))
 
-_thread.start_new_thread(callBackend, ())
-_thread.start_new_thread(emergencyMonitor, ())
+  _thread.start_new_thread(callBackend, ())
+  _thread.start_new_thread(emergencyMonitor, ())
 
-btnA.wasPressed(onBtnAPressed)
-btnB.wasPressed(onBtnBPressed)
-
+  btnA.wasPressed(onBtnAPressed)
+  btnB.wasPressed(onBtnBPressed)
+except Exception as e:
+  sys.print_exception(e)
+  lcd.clear(lcd.RED)
+  msg = "Failed! Pls restart."
+  w = lcd.textWidth(msg)
+  lcd.text((int)((240-w)/2), 54, msg)
