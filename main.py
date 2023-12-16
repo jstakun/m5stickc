@@ -111,15 +111,19 @@ def printScreen():
     elif directionStr == 'FortyFiveDown' or directionStr == 'FortyFiveUp':
       lcd.triangle(x+15, y-20, x+15, y+20, x-25, y, fillcolor=backgroundColor, color=backgroundColor)
     elif directionStr == 'DoubleDown': 
-      lcd.triangle(x-20, y, x+20, y, x, y+30, fillcolor=lcd.RED, color=lcd.RED)
-      lcd.triangle(x-20, y-25, x+20, y-25, x, y+10, fillcolor=lcd.RED, color=lcd.RED)
+      if not olderThanHour: backgroundColor=lcd.RED
+      lcd.triangle(x-20, y, x+20, y, x, y+30, fillcolor=backgroundColor, color=backgroundColor)
+      lcd.triangle(x-20, y-25, x+20, y-25, x, y+10, fillcolor=backgroundColor, color=backgroundColor)
     elif directionStr == 'DoubleUp':
-      lcd.triangle(x-20, y+18, x+20, y+18, x, y-7, fillcolor=lcd.RED, color=lcd.RED)
-      lcd.triangle(x-20, y-5, x+20, y-5, x, y-30, fillcolor=lcd.RED, color=lcd.RED)
+      if not olderThanHour: backgroundColor=lcd.RED
+      lcd.triangle(x-20, y+18, x+20, y+18, x, y-7, fillcolor=backgroundColor, color=backgroundColor)
+      lcd.triangle(x-20, y-5, x+20, y-5, x, y-30, fillcolor=backgroundColor, color=backgroundColor)
     elif directionStr == 'SingleUp':
-      lcd.triangle(x-20, y+15, x+20, y+15, x, y-25, fillcolor=lcd.ORANGE, color=lcd.ORANGE)
+      if not olderThanHour: backgroundColor=lcd.ORANGE
+      lcd.triangle(x-20, y+15, x+20, y+15, x, y-25, fillcolor=backgroundColor, color=backgroundColor)
     elif directionStr == 'SingleDown':
-      lcd.triangle(x-20, y-15, x+20, y-15, x, y+25, fillcolor=lcd.ORANGE, color=lcd.ORANGE)
+      if not olderThanHour: backgroundColor=lcd.ORANGE
+      lcd.triangle(x-20, y-15, x+20, y-15, x, y+25, fillcolor=backgroundColor, color=backgroundColor)
     else:
       print("Unknown direction: " + directionStr)
 
@@ -146,15 +150,19 @@ def printScreen():
     elif directionStr == 'FortyFiveDown' or directionStr == 'FortyFiveUp':
       lcd.triangle(x-15, y-20, x-15, y+20, x+25, y, fillcolor=backgroundColor, color=backgroundColor)
     elif directionStr == 'DoubleDown': 
-      lcd.triangle(x-20, y+18, x+20, y+18, x, y-7, fillcolor=lcd.RED, color=lcd.RED)
-      lcd.triangle(x-20, y-5, x+20, y-5, x, y-30, fillcolor=lcd.RED, color=lcd.RED)
+      if not olderThanHour: backgroundColor=lcd.RED
+      lcd.triangle(x-20, y+18, x+20, y+18, x, y-7, fillcolor=backgroundColor, color=backgroundColor)
+      lcd.triangle(x-20, y-5, x+20, y-5, x, y-30, fillcolor=backgroundColor, color=backgroundColor)
     elif directionStr == 'DoubleUp':
-      lcd.triangle(x-20, y, x+20, y, x, y+30, fillcolor=lcd.RED, color=lcd.RED)
-      lcd.triangle(x-20, y-25, x+20, y-25, x, y+10, fillcolor=lcd.RED, color=lcd.RED)
+      if not olderThanHour: backgroundColor=lcd.RED
+      lcd.triangle(x-20, y, x+20, y, x, y+30, fillcolor=backgroundColor, color=backgroundColor)
+      lcd.triangle(x-20, y-25, x+20, y-25, x, y+10, fillcolor=backgroundColor, color=backgroundColor)
     elif directionStr == 'SingleUp':
-      lcd.triangle(x-20, y-15, x+20, y-15, x, y+25, fillcolor=lcd.ORANGE, color=lcd.ORANGE)
+      if not olderThanHour: backgroundColor=lcd.ORANGE
+      lcd.triangle(x-20, y-15, x+20, y-15, x, y+25, fillcolor=backgroundColor, color=backgroundColor)
     elif directionStr == 'SingleDown':
-      lcd.triangle(x-20, y+15, x+20, y+15, x, y-25, fillcolor=lcd.ORANGE, color=lcd.ORANGE)
+      if not olderThanHour: backgroundColor=lcd.ORANGE
+      lcd.triangle(x-20, y+15, x+20, y+15, x, y-25, fillcolor=backgroundColor, color=backgroundColor)
     else:
       print("Unknown direction: " + directionStr)
 
