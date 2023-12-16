@@ -88,11 +88,11 @@ def printScreen():
   axp.setLcdBrightness(brightness)
 
   if olderThanHour: backgroundColor=lcd.DARKGREY; lcd.clear(backgroundColor); lcd.setTextColor(lcd.WHITE); M5Led.on(); emergency=False
-  elif sgv <= EMERGENCY_MIN: backgroundColor=lcd.RED; lcd.clear(backgroundColor); lcd.setTextColor(lcd.WHITE); M5Led.on(); emergency=(utime.time() > emergencyPause)
+  elif sgv <= EMERGENCY_MIN: backgroundColor=lcd.RED; lcd.clear(backgroundColor); lcd.setTextColor(lcd.WHITE); M5Led.on(); emergency=(utime.time() > emergencyPause); mode=0
   elif sgv > EMERGENCY_MIN and sgv <= MIN: backgroundColor=lcd.RED; lcd.clear(backgroundColor); lcd.setTextColor(lcd.WHITE); M5Led.on(); emergency=False
   elif sgv > MIN and sgv <= MAX: backgroundColor=lcd.DARKGREEN; lcd.clear(backgroundColor); lcd.setTextColor(lcd.WHITE); emergency=False; M5Led.off() 
   elif sgv > MAX and sgv <= EMERGENCY_MAX: backgroundColor=lcd.ORANGE; lcd.clear(backgroundColor); lcd.setTextColor(lcd.WHITE); M5Led.on(); emergency=False
-  elif sgv > EMERGENCY_MAX: backgroundColor=lcd.ORANGE; lcd.clear(backgroundColor); lcd.setTextColor(lcd.WHITE); M5Led.on(); emergency=(utime.time() > emergencyPause)  
+  elif sgv > EMERGENCY_MAX: backgroundColor=lcd.ORANGE; lcd.clear(backgroundColor); lcd.setTextColor(lcd.WHITE); M5Led.on(); emergency=(utime.time() > emergencyPause); mode=0  
 
   if mode == 0:  
     #full mode
