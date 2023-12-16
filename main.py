@@ -127,12 +127,54 @@ def printScreen():
     lcd.font(lcd.FONT_DejaVu24, rotate=0)
     w = lcd.textWidth(dateStr)
     lcd.text((int)((240-w)/2), 100, dateStr)
-  elif mode == 2:
+  elif mode == 3:
     #battery mode
     lcd.font(lcd.FONT_DejaVu24, rotate=0)
     msg = 'Battery: ' + str(getBatteryLevel()) + '%'
     w = lcd.textWidth(msg)
     lcd.text((int)((240-w)/2), 54, msg)
+  elif mode == 1:
+    #flip_full
+    
+    #direction
+    x=58
+    y=44
+    lcd.circle(x, y, 40, fillcolor=lcd.WHITE)
+
+    if directionStr == 'Flat':
+      lcd.triangle(x+15, y-20, x+15, y+20, x-25, y, fillcolor=backgroundColor, color=backgroundColor)
+    elif directionStr == 'FortyFiveDown' or directionStr == 'FortyFiveUp':
+      lcd.triangle(x-15, y-20, x-15, y+20, x+25, y, fillcolor=backgroundColor, color=backgroundColor)
+    elif directionStr == 'DoubleDown': 
+      lcd.triangle(x-20, y+18, x+20, y+18, x, y-7, fillcolor=lcd.RED, color=lcd.RED)
+      lcd.triangle(x-20, y-5, x+20, y-5, x, y-30, fillcolor=lcd.RED, color=lcd.RED)
+    elif directionStr == 'DoubleUp':
+      lcd.triangle(x-20, y, x+20, y, x, y+30, fillcolor=lcd.RED, color=lcd.RED)
+      lcd.triangle(x-20, y-25, x+20, y-25, x, y+10, fillcolor=lcd.RED, color=lcd.RED)
+    elif directionStr == 'SingleUp':
+      lcd.triangle(x-20, y-15, x+20, y-15, x, y+25, fillcolor=lcd.ORANGE, color=lcd.ORANGE)
+    elif directionStr == 'SingleDown':
+      lcd.triangle(x-20, y+15, x+20, y+15, x, y-25, fillcolor=lcd.ORANGE, color=lcd.ORANGE)
+    else:
+      print("Unknown direction: " + directionStr)
+
+    #sgv
+    if sgv < 100: sgvStr = " " + sgvStr
+    lcd.font(lcd.FONT_DejaVu56, rotate=180)
+    lcd.text(206, 66, sgvStr)
+
+    #ago or date
+    lcd.font(lcd.FONT_DejaVu24, rotate=180)
+    w = lcd.textWidth(dateStr)
+    t=(int)(240-((240-w)/2))
+    if t>216: t=216
+    lcd.text(t, 110, dateStr)
+  elif mode == 4:
+    #flip_battery    
+    lcd.font(lcd.FONT_DejaVu24, rotate=180)
+    msg = 'Battery: ' + str(getBatteryLevel()) + '%'
+    w = lcd.textWidth(msg)
+    lcd.text((int)(w+((240-w)/2)), 80, msg)
 
 def callBackend():
   global response, INTERVAL, API_ENDPOINT, API_TOKEN, LOCALE
@@ -158,8 +200,8 @@ def onBtnAPressed():
     emergency = False
     emergencyPause = utime.time() + 1800 #30 mins
   else:   
-    if mode == 2: mode = 0
-    elif mode < 2: mode += 1 
+    if mode == 4: mode = 0
+    elif mode < 4: mode += 1 
     print('Selected mode ' + MODES[mode])
     printScreen()
 
@@ -205,7 +247,7 @@ MAX = config["max"]
 EMERGENCY_MIN = config["emergencyMin"]
 EMERGENCY_MAX = config["emergencyMax"] 
 
-MODES = ["full", "basic", "battery"]
+MODES = ["full", "flip_full", "basic", "battery", "flip_battery"]
 mode = 0
 response = {}
 brightness = 32
@@ -273,6 +315,6 @@ try:
 except Exception as e:
   sys.print_exception(e)
   lcd.clear(lcd.RED)
-  msg = "Failed! Pls restart."
+  msg = "FAIL! Pls restart."
   w = lcd.textWidth(msg)
   lcd.text((int)((240-w)/2), 54, msg)
