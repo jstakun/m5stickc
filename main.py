@@ -87,7 +87,6 @@ def drawDirection(x, y, direction, backgroundColor, fillColor=lcd.WHITE):
     if len(direction) == 12:
       lcd.triangle(direction[6], direction[7], direction[8], direction[9], direction[10], direction[11], fillcolor=backgroundColor, color=backgroundColor)
 
-
 def printScreen():
   global response, mode, brightness, emergency, emergencyPause, MIN, MAX, EMERGENCY_MIN, EMERGENCY_MAX, DATE_FORMAT
 
@@ -149,8 +148,7 @@ def printScreen():
     
     #ago or date
     lcd.font(lcd.FONT_DejaVu24, rotate=0)
-    w = lcd.textWidth(dateStr)
-    lcd.text((int)((240-w)/2), 100, dateStr)
+    lcd.text((int)((240-lcd.textWidth(dateStr))/2), 100, dateStr)
   elif mode == 1:
     #flip_full
 
@@ -181,8 +179,7 @@ def printScreen():
 
     #ago or date
     lcd.font(lcd.FONT_DejaVu24, rotate=180)
-    w = lcd.textWidth(dateStr)
-    x=(int)(240-((240-w)/2))
+    x = (int)(240-((240-lcd.textWidth(dateStr))/2))
     if x>216: x=216
     lcd.text(x, 110, dateStr)
   elif mode == 3:
