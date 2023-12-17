@@ -70,11 +70,23 @@ def getBatteryLevel():
   if volt < 4.20: return 100
   if volt >= 4.20: return 101
 
+def printCenteredText(msg, font=lcd.FONT_DejaVu24, rotateAngle=0, backgroundColor=lcd.BLACK, textColor=lcd.WHITE):
+  lcd.font(font, rotate=rotateAngle)
+  lcd.clear(backgroundColor)
+  lcd.setTextColor(textColor)
+  w = lcd.textWidth(msg)
+  if rotateAngle==180:
+    lcd.text((int)(w+((240-w)/2)), 80, msg)
+  else:
+    f = lcd.fontSize()
+    lcd.text((int)((240-w)/2), (int)(80-f[0]), msg)
+
 def printScreen():
   global response, mode, brightness, emergency, emergencyPause, MIN, MAX, EMERGENCY_MIN, EMERGENCY_MAX, DATE_FORMAT
 
   sgv = response['sgv']
   sgvStr = str(response['sgv'])
+  if sgv < 100: sgvStr = " " + sgvStr
   if DATE_FORMAT == "elapsed" and "ago" in response: 
     dateStr = response['ago']
   else: 
@@ -97,16 +109,12 @@ def printScreen():
   elif sgv > EMERGENCY_MAX: backgroundColor=lcd.ORANGE; lcd.clear(backgroundColor); lcd.setTextColor(lcd.WHITE); M5Led.on(); emergency=(utime.time() > emergencyPause)  
 
   #if emergency change to one of full modes 
-  if emergency and mode==2 or mode==3: mode=0
-  elif emergency and mode==4: mode=1; 
+  if emergency==True and (mode==2 or mode==3): mode=0
+  elif emergency==True and mode==4: mode=1; 
 
   if mode == 0:  
     #full mode
-    #sgv
-    if sgv < 100: sgvStr = " " + sgvStr
-    lcd.font(lcd.FONT_DejaVu56, rotate=0)
-    lcd.text(12, 24, sgvStr)
-
+    
     #direction
     x=178
     y=48
@@ -133,13 +141,17 @@ def printScreen():
     else:
       print("Unknown direction: " + directionStr)
 
+    #sgv
+    lcd.font(lcd.FONT_DejaVu56, rotate=0)
+    lcd.text(12, 24, sgvStr)
+    
     #ago or date
     lcd.font(lcd.FONT_DejaVu24, rotate=0)
     w = lcd.textWidth(dateStr)
     lcd.text((int)((240-w)/2), 100, dateStr)
   elif mode == 1:
     #flip_full
-    
+
     #direction
     x=58
     y=44
@@ -167,29 +179,22 @@ def printScreen():
       print("Unknown direction: " + directionStr)
 
     #sgv
-    if sgv < 100: sgvStr = " " + sgvStr
     lcd.font(lcd.FONT_DejaVu56, rotate=180)
     lcd.text(206, 66, sgvStr)
 
     #ago or date
     lcd.font(lcd.FONT_DejaVu24, rotate=180)
     w = lcd.textWidth(dateStr)
-    t=(int)(240-((240-w)/2))
-    if t>216: t=216
-    lcd.text(t, 110, dateStr)
+    x=(int)(240-((240-w)/2))
+    if x>216: x=216
+    lcd.text(x, 110, dateStr)
   elif mode == 3:
     #battery mode
-    lcd.font(lcd.FONT_DejaVu24, rotate=0)
-    msg = 'Battery: ' + str(getBatteryLevel()) + '%'
-    w = lcd.textWidth(msg)
-    lcd.text((int)((240-w)/2), 54, msg)
+    printCenteredText("Battery: " + str(getBatteryLevel()) + "%", backgroundColor=backgroundColor)
   elif mode == 4:
-    #flip_battery    
-    lcd.font(lcd.FONT_DejaVu24, rotate=180)
-    msg = 'Battery: ' + str(getBatteryLevel()) + '%'
-    w = lcd.textWidth(msg)
-    lcd.text((int)(w+((240-w)/2)), 80, msg)
-
+    #flip_battery
+    printCenteredText("Battery: " + str(getBatteryLevel()) + "%", backgroundColor=backgroundColor, rotateAngle=180)    
+    
 def callBackend():
   global response, INTERVAL, API_ENDPOINT, API_TOKEN, LOCALE, TIMEZONE
   while True:
@@ -274,18 +279,15 @@ beeper = PWM(Pin(2), freq=1000, duty=50)
 beeper.pause()
 
 axp.setLcdBrightness(brightness)
-lcd.clear(lcd.WHITE)
-lcd.setTextColor(lcd.WHITE)
 lcd.orient(lcd.LANDSCAPE)
-lcd.font(lcd.FONT_DejaVu24, rotate=0)
+lcd.clear(lcd.WHITE)
+
 
 nic = network.WLAN(network.STA_IF)
 nic.active(True)
 
-lcd.clear(lcd.DARKGREY)
-msg = "Scanning wifi..."
-w = lcd.textWidth(msg)
-lcd.text((int)((240-w)/2), 54, msg)
+printCenteredText("Scanning wifi...", backgroundColor=lcd.DARKGREY)
+
 found = False
 while not found:
   try: 
@@ -295,33 +297,25 @@ while not found:
       if ssid in WIFI: found = True; SSID=ssid; WIFI_PASSWORD=WIFI[ssid]; break
   except Exception as e:
       sys.print_exception(e)
-      lcd.clear(lcd.DARKGREY)
-      msg = "Saved wifi not found!"
-      w = lcd.textWidth(msg)
-      lcd.text((int)((240-w)/2), 54, msg)         
+      printCenteredText("Saved wifi not found!", backgroundColor=lcd.RED)  
   if not found: time.sleep(1)
 
-lcd.clear(lcd.OLIVE)
-msg = "Connecting wifi..."
-w = lcd.textWidth(msg)
-lcd.text((int)((240-w)/2), 54, msg)
+printCenteredText("Connecting wifi...", backgroundColor=lcd.OLIVE)
 nic.connect(SSID, WIFI_PASSWORD)
 print('Connecting wifi ' + SSID)
 while not nic.isconnected():
   print(".", end="")
   time.sleep(0.25)
 
-lcd.clear(lcd.GREENYELLOW)
-msg = "Loading data..."
-w = lcd.textWidth(msg)
-lcd.text((int)((240-w)/2), 54, msg)
+printCenteredText("Setting time...", backgroundColor=lcd.GREENYELLOW)
 
 try: 
-  print('Setting time...')
   rtc = machine.RTC()
   tm = utime.localtime(currentTime())
   rtc.datetime((tm[0], tm[1], tm[2], tm[6] + 1, tm[3], tm[4], tm[5], 0))
   print("Current time " +  str(rtc.datetime()))
+
+  printCenteredText("Loading data...", backgroundColor=lcd.DARKGREEN)
 
   _thread.start_new_thread(callBackend, ())
   _thread.start_new_thread(emergencyMonitor, ())
@@ -330,7 +324,5 @@ try:
   btnB.wasPressed(onBtnBPressed)
 except Exception as e:
   sys.print_exception(e)
-  lcd.clear(lcd.RED)
-  msg = "FAIL! Pls restart."
-  w = lcd.textWidth(msg)
-  lcd.text((int)((240-w)/2), 54, msg)
+  printCenteredText("Restart required!", backgroundColor=lcd.RED)
+  
