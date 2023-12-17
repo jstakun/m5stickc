@@ -71,12 +71,14 @@ def getBatteryLevel():
   if volt >= 4.20: return 101
 
 def printScreen():
-  global response, mode, brightness, emergency, emergencyPause, MIN, MAX, EMERGENCY_MIN, EMERGENCY_MAX
+  global response, mode, brightness, emergency, emergencyPause, MIN, MAX, EMERGENCY_MIN, EMERGENCY_MAX, DATE_FORMAT
 
   sgv = response['sgv']
   sgvStr = str(response['sgv'])
-  if "ago" in response: dateStr = response['ago']
-  else: dateStr = response['date']
+  if DATE_FORMAT == "elapsed" and "ago" in response: 
+    dateStr = response['ago']
+  else: 
+    dateStr = response['date'].replace("T", " ")
   directionStr = response['direction']
 
   olderThanHour = False
@@ -88,11 +90,15 @@ def printScreen():
   axp.setLcdBrightness(brightness)
 
   if olderThanHour: backgroundColor=lcd.DARKGREY; lcd.clear(backgroundColor); lcd.setTextColor(lcd.WHITE); M5Led.on(); emergency=False
-  elif sgv <= EMERGENCY_MIN: backgroundColor=lcd.RED; lcd.clear(backgroundColor); lcd.setTextColor(lcd.WHITE); M5Led.on(); emergency=(utime.time() > emergencyPause); mode=0
+  elif sgv <= EMERGENCY_MIN: backgroundColor=lcd.RED; lcd.clear(backgroundColor); lcd.setTextColor(lcd.WHITE); M5Led.on(); emergency=(utime.time() > emergencyPause)  
   elif sgv > EMERGENCY_MIN and sgv <= MIN: backgroundColor=lcd.RED; lcd.clear(backgroundColor); lcd.setTextColor(lcd.WHITE); M5Led.on(); emergency=False
   elif sgv > MIN and sgv <= MAX: backgroundColor=lcd.DARKGREEN; lcd.clear(backgroundColor); lcd.setTextColor(lcd.WHITE); emergency=False; M5Led.off() 
   elif sgv > MAX and sgv <= EMERGENCY_MAX: backgroundColor=lcd.ORANGE; lcd.clear(backgroundColor); lcd.setTextColor(lcd.WHITE); M5Led.on(); emergency=False
-  elif sgv > EMERGENCY_MAX: backgroundColor=lcd.ORANGE; lcd.clear(backgroundColor); lcd.setTextColor(lcd.WHITE); M5Led.on(); emergency=(utime.time() > emergencyPause); mode=0  
+  elif sgv > EMERGENCY_MAX: backgroundColor=lcd.ORANGE; lcd.clear(backgroundColor); lcd.setTextColor(lcd.WHITE); M5Led.on(); emergency=(utime.time() > emergencyPause)  
+
+  #if emergency change to one of full modes 
+  if emergency and mode==2 or mode==3: mode=0
+  elif emergency and mode==4: mode=1; 
 
   if mode == 0:  
     #full mode
@@ -131,12 +137,6 @@ def printScreen():
     lcd.font(lcd.FONT_DejaVu24, rotate=0)
     w = lcd.textWidth(dateStr)
     lcd.text((int)((240-w)/2), 100, dateStr)
-  elif mode == 3:
-    #battery mode
-    lcd.font(lcd.FONT_DejaVu24, rotate=0)
-    msg = 'Battery: ' + str(getBatteryLevel()) + '%'
-    w = lcd.textWidth(msg)
-    lcd.text((int)((240-w)/2), 54, msg)
   elif mode == 1:
     #flip_full
     
@@ -177,6 +177,12 @@ def printScreen():
     t=(int)(240-((240-w)/2))
     if t>216: t=216
     lcd.text(t, 110, dateStr)
+  elif mode == 3:
+    #battery mode
+    lcd.font(lcd.FONT_DejaVu24, rotate=0)
+    msg = 'Battery: ' + str(getBatteryLevel()) + '%'
+    w = lcd.textWidth(msg)
+    lcd.text((int)((240-w)/2), 54, msg)
   elif mode == 4:
     #flip_battery    
     lcd.font(lcd.FONT_DejaVu24, rotate=180)
@@ -185,11 +191,11 @@ def printScreen():
     lcd.text((int)(w+((240-w)/2)), 80, msg)
 
 def callBackend():
-  global response, INTERVAL, API_ENDPOINT, API_TOKEN, LOCALE
+  global response, INTERVAL, API_ENDPOINT, API_TOKEN, LOCALE, TIMEZONE
   while True:
     try:
       print('Battery level: ' + str(getBatteryLevel()) + '%')
-      response = urequests.get(API_ENDPOINT + "/1/api/v1/entries.json?count=1",headers={'api-secret': API_TOKEN,'accept-language': LOCALE,'accept-charset': 'ascii'}).json()
+      response = urequests.get(API_ENDPOINT + "/1/api/v1/entries.json?count=1",headers={'api-secret': API_TOKEN,'accept-language': LOCALE,'accept-charset': 'ascii', 'x-gms-tz': TIMEZONE}).json()
       print('Sgv: ', response['sgv'])
       print('Read: ', response['date'])
       print('Direction: ', response['direction'])
@@ -254,6 +260,8 @@ MIN = config["min"]
 MAX = config["max"]
 EMERGENCY_MIN = config["emergencyMin"]
 EMERGENCY_MAX = config["emergencyMax"] 
+TIMEZONE = config["timezone"]
+DATE_FORMAT = config["dateFormat"]
 
 MODES = ["full", "flip_full", "basic", "battery", "flip_battery"]
 mode = 0
