@@ -208,7 +208,7 @@ def callBackend():
       time.sleep(retry)
 
 def onBtnAPressed():
-  global mode, MODES, emergency 
+  global mode, MODES, emergency, emergencyPause 
   if emergency == True:
     emergency = False
     emergencyPause = utime.time() + 1800 #30 mins
@@ -219,7 +219,7 @@ def onBtnAPressed():
     printScreen()
 
 def onBtnBPressed():
-  global emergency
+  global emergency, emergencyPause
   if emergency == True:
     emergency = False
     emergencyPause = utime.time() + 1800 #30 mins
