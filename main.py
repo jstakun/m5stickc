@@ -93,11 +93,15 @@ def printScreen():
   sgv = response['sgv']
   sgvStr = str(response['sgv'])
   if sgv < 100: sgvStr = " " + sgvStr
-  if DATE_FORMAT == "elapsed" and "ago" in response: 
-    dateStr = response['ago']
-  else: 
-    dateStr = response['date'].replace("T", " ")
+
   directionStr = response['direction']
+
+  if "ago" in response and (mode == 0 or mode == 4): 
+    dateStr = response['ago']
+  elif mode == 2 or mode == 6:
+    dateStr = "Battery: " + str(getBatteryLevel()) + "%"
+  else:   
+    dateStr = response['date'].replace("T", " ")[:-3] #remove seconds to fit screen
 
   olderThanHour = False
   try:
@@ -115,10 +119,9 @@ def printScreen():
   elif sgv > EMERGENCY_MAX: backgroundColor=lcd.ORANGE; lcd.clear(backgroundColor); lcd.setTextColor(lcd.WHITE); M5Led.on(); emergency=(utime.time() > emergencyPause)  
 
   #if emergency change to one of full modes 
-  if emergency==True and (mode==2 or mode==3): mode=0
-  elif emergency==True and mode==4: mode=1; 
-
-  if mode == 0:  
+  if emergency==True and mode==3: mode=0
+  
+  if mode in range (0,3):  
     #full mode
     
     #direction
@@ -149,8 +152,8 @@ def printScreen():
     #ago or date
     lcd.font(lcd.FONT_DejaVu24, rotate=0)
     lcd.text((int)((240-lcd.textWidth(dateStr))/2), 100, dateStr)
-  elif mode == 1:
-    #flip_full
+  elif mode in range(4,7):
+    #flip mode
 
     #direction
     x=58
@@ -182,12 +185,6 @@ def printScreen():
     x = (int)(240-((240-lcd.textWidth(dateStr))/2))
     if x>216: x=216
     lcd.text(x, 110, dateStr)
-  elif mode == 3:
-    #battery mode
-    printCenteredText("Battery: " + str(getBatteryLevel()) + "%", backgroundColor=backgroundColor)
-  elif mode == 4:
-    #flip_battery
-    printCenteredText("Battery: " + str(getBatteryLevel()) + "%", backgroundColor=backgroundColor, rotateAngle=180)    
     
 def callBackend():
   global response, INTERVAL, API_ENDPOINT, API_TOKEN, LOCALE, TIMEZONE
@@ -213,8 +210,8 @@ def onBtnAPressed():
     emergency = False
     emergencyPause = utime.time() + 1800 #30 mins
   else:   
-    if mode == 4: mode = 0
-    elif mode < 4: mode += 1 
+    if mode == 6: mode = 0
+    elif mode < 6: mode += 1 
     print('Selected mode ' + MODES[mode])
     printScreen()
 
@@ -232,8 +229,12 @@ def onBtnBPressed():
 def emergencyMonitor():
   global emergency, beeper, response
   while True:
-    if emergency:
-      print('Emergency glucose level ' + str(response['sgv']) + '!!!')
+    batteryLevel = getBatteryLevel();
+    if emergency == True or (batteryLevel < 20 and batteryLevel > 0):
+      if emergency == True:
+        print('Emergency glucose level ' + str(response['sgv']) + '!!!')
+      elif batteryLevel < 20:
+        print('Low battery level ' + str(batteryLevel) + "%!!!")
       beeper.resume()
       M5Led.on()
       time.sleep(0.5)
@@ -262,7 +263,7 @@ EMERGENCY_MAX = config["emergencyMax"]
 TIMEZONE = config["timezone"]
 DATE_FORMAT = config["dateFormat"]
 
-MODES = ["full", "flip_full", "basic", "battery", "flip_battery"]
+MODES = ["full_elapsed", "full_date", "full_battery", "basic", "flip_full_elapsed", "flip_full_date", "flip_full_battery"]
 mode = 0
 response = {}
 brightness = 32
