@@ -9,6 +9,5 @@
     "emergencyMax": 250, //emergency high glucose level which will trigger beeper and blinking led
     //this is only relevant if you use my nightscout server as backend
     "locale": "en-US", //locale for printing elapsed time
-    "timezone": "GMT+1", //time zone of gcm device in format GMT+/-Hours 
-    "dateFormat": "elapsed" //elapsed or date 
+    "timezone": "GMT+1" //time zone of gcm device in format GMT+/-Hours 
 }

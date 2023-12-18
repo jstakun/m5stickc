@@ -88,7 +88,7 @@ def drawDirection(x, y, direction, backgroundColor, fillColor=lcd.WHITE):
       lcd.triangle(direction[6], direction[7], direction[8], direction[9], direction[10], direction[11], fillcolor=backgroundColor, color=backgroundColor)
 
 def printScreen():
-  global response, mode, brightness, emergency, emergencyPause, MIN, MAX, EMERGENCY_MIN, EMERGENCY_MAX, DATE_FORMAT
+  global response, mode, brightness, emergency, emergencyPause, MIN, MAX, EMERGENCY_MIN, EMERGENCY_MAX
 
   sgv = response['sgv']
   sgvStr = str(response['sgv'])
@@ -261,7 +261,6 @@ MAX = config["max"]
 EMERGENCY_MIN = config["emergencyMin"]
 EMERGENCY_MAX = config["emergencyMax"] 
 TIMEZONE = config["timezone"]
-DATE_FORMAT = config["dateFormat"]
 
 MODES = ["full_elapsed", "full_date", "full_battery", "basic", "flip_full_elapsed", "flip_full_date", "flip_full_battery"]
 mode = 0
