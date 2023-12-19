@@ -196,15 +196,18 @@ def printScreen():
 
     #sgv
     lcd.font(lcd.FONT_DejaVu56, rotate=180)
-    lcd.textClear(206-lcd.textWidth(sgvStr), 66-lcd.fontSize()[1], sgvStr, backgroundColor)
-    lcd.print(sgvStr, 206, 78)
+    x = 206
+    y = 78
+    lcd.textClear(x-lcd.textWidth(sgvStr), y-lcd.fontSize()[1], sgvStr, backgroundColor)
+    lcd.print(sgvStr, x, y)
 
     #ago or date
     lcd.font(lcd.FONT_DejaVu18, rotate=180)
     x = (int)(240-((240-lcd.textWidth(dateStr))/2))
     if x>216: x=216
-    lcd.fillRect(0, 110-lcd.fontSize()[1], 240, 110, backgroundColor)
-    lcd.print(dateStr, x, 118)
+    y = 118
+    lcd.fillRect(0, y-lcd.fontSize()[1], 240, y, backgroundColor)
+    lcd.print(dateStr, x, y)
     
 def callBackend():
   global response, INTERVAL, API_ENDPOINT, API_TOKEN, LOCALE, TIMEZONE
