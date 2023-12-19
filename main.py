@@ -88,7 +88,7 @@ def drawDirection(x, y, direction, backgroundColor, fillColor=lcd.WHITE):
       lcd.triangle(direction[6], direction[7], direction[8], direction[9], direction[10], direction[11], fillcolor=backgroundColor, color=backgroundColor)
 
 def printScreen():
-  global response, mode, brightness, emergency, emergencyPause, MIN, MAX, EMERGENCY_MIN, EMERGENCY_MAX
+  global response, mode, brightness, emergency, emergencyPause, MIN, MAX, EMERGENCY_MIN, EMERGENCY_MAX, basicModeBackgroudColor
 
   sgv = response['sgv']
   sgvStr = str(response['sgv'])
@@ -111,16 +111,26 @@ def printScreen():
 
   axp.setLcdBrightness(brightness)
 
-  if olderThanHour: backgroundColor=lcd.DARKGREY; lcd.clear(backgroundColor); lcd.setTextColor(lcd.WHITE); M5Led.on(); emergency=False
-  elif sgv <= EMERGENCY_MIN: backgroundColor=lcd.RED; lcd.clear(backgroundColor); lcd.setTextColor(lcd.WHITE); M5Led.on(); emergency=(utime.time() > emergencyPause)  
-  elif sgv > EMERGENCY_MIN and sgv <= MIN: backgroundColor=lcd.RED; lcd.clear(backgroundColor); lcd.setTextColor(lcd.WHITE); M5Led.on(); emergency=False
-  elif sgv > MIN and sgv <= MAX: backgroundColor=lcd.DARKGREEN; lcd.clear(backgroundColor); lcd.setTextColor(lcd.WHITE); emergency=False; M5Led.off() 
-  elif sgv > MAX and sgv <= EMERGENCY_MAX: backgroundColor=lcd.ORANGE; lcd.clear(backgroundColor); lcd.setTextColor(lcd.WHITE); M5Led.on(); emergency=False
-  elif sgv > EMERGENCY_MAX: backgroundColor=lcd.ORANGE; lcd.clear(backgroundColor); lcd.setTextColor(lcd.WHITE); M5Led.on(); emergency=(utime.time() > emergencyPause)  
+  if olderThanHour: backgroundColor=lcd.DARKGREY; M5Led.on(); emergency=False
+  elif sgv <= EMERGENCY_MIN: backgroundColor=lcd.RED; M5Led.on(); emergency=(utime.time() > emergencyPause)  
+  elif sgv > EMERGENCY_MIN and sgv <= MIN: backgroundColor=lcd.RED; M5Led.on(); emergency=False
+  elif sgv > MIN and sgv <= MAX: backgroundColor=lcd.DARKGREEN; emergency=False; M5Led.off() 
+  elif sgv > MAX and sgv <= EMERGENCY_MAX: backgroundColor=lcd.ORANGE; M5Led.on(); emergency=False
+  elif sgv > EMERGENCY_MAX: backgroundColor=lcd.ORANGE; M5Led.on(); emergency=(utime.time() > emergencyPause)  
 
   #if emergency change to one of full modes 
   if emergency==True and mode==3: mode=0
-  
+
+  #in basic mode skip background clearing if color doesn't change  
+  if (mode != 3 or basicModeBackgroudColor != backgroundColor):
+     lcd.clear(backgroundColor)
+     lcd.setTextColor(lcd.WHITE)
+  if mode == 3:   
+     basicModeBackgroudColor = backgroundColor
+     print("Skipping background clearing")
+  else:
+     basicModeBackgroudColor = -1   
+
   if mode in range (0,3):  
     #full mode
     
@@ -205,7 +215,7 @@ def callBackend():
       time.sleep(retry)
 
 def onBtnAPressed():
-  global mode, MODES, emergency, emergencyPause 
+  global mode, MODES, emergency, emergencyPause
   if emergency == True:
     emergency = False
     emergencyPause = utime.time() + 1800 #30 mins
@@ -268,6 +278,7 @@ response = {}
 brightness = 32
 emergency = False
 emergencyPause = 0
+basicModeBackgroudColor = -1
 
 beeper = PWM(Pin(2), freq=1000, duty=50)
 beeper.pause()
