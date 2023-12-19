@@ -77,13 +77,11 @@ def printCenteredText(msg, font=lcd.FONT_DejaVu24, rotateAngle=0, backgroundColo
   lcd.setTextColor(textColor)
   w = lcd.textWidth(msg)
   f = lcd.fontSize()
+  lcd.fillRect(0, 80-f[1], 240, f[1], backgroundColor)
   if rotateAngle==180:
-    lcd.textClear((int)(w+((240-w)/2)), 80, msg, backgroundColor)
     lcd.print(msg, (int)(w+((240-w)/2)), 80)
   else:
-    #lcd.fillRect((int)((240-w)/2), (int)(80-f[0]), w, f[1], backgroundColor)
-    lcd.textClear((int)((240-w)/2), (int)(80-f[0]), msg, backgroundColor)
-    lcd.print(msg, (int)((240-w)/2), (int)(80-f[0]))
+    lcd.print(msg, (int)((240-w)/2), (int)(80-f[1]))
 
 def drawDirection(x, y, direction, backgroundColor, fillColor=lcd.WHITE):
     lcd.circle(x, y, 40, fillcolor=fillColor)
@@ -193,14 +191,14 @@ def printScreen():
 
     #sgv
     lcd.font(lcd.FONT_DejaVu56, rotate=180)
-    lcd.textClear(206, 66, sgvStr, backgroundColor)
+    lcd.textClear(206-lcd.textWidth(sgvStr), 66-lcd.fontSize()[1], sgvStr, backgroundColor)
     lcd.print(sgvStr, 206, 66)
 
     #ago or date
     lcd.font(lcd.FONT_DejaVu24, rotate=180)
     x = (int)(240-((240-lcd.textWidth(dateStr))/2))
     if x>216: x=216
-    lcd.textClear(x, 110, dateStr, backgroundColor)
+    lcd.textClear(x-lcd.textWidth(" " + dateStr + " "), 110-lcd.fontSize()[1], " " + dateStr + " ", backgroundColor)
     lcd.print(dateStr, x, 110)
     
 def callBackend():
