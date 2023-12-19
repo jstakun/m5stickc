@@ -83,11 +83,11 @@ def printCenteredText(msg, font=lcd.FONT_DejaVu24, rotateAngle=0, backgroundColo
   else:
     lcd.print(msg, (int)((240-w)/2), (int)(80-f[1]))
 
-def drawDirection(x, y, direction, backgroundColor, fillColor=lcd.WHITE):
+def drawDirection(x, y, direction, arrowColor, fillColor=lcd.WHITE):
     lcd.circle(x, y, 40, fillcolor=fillColor)
-    lcd.triangle(direction[0], direction[1], direction[2], direction[3], direction[4], direction[5], fillcolor=backgroundColor, color=backgroundColor)
+    lcd.triangle(direction[0], direction[1], direction[2], direction[3], direction[4], direction[5], fillcolor=arrowColor, color=arrowColor)
     if len(direction) == 12:
-      lcd.triangle(direction[6], direction[7], direction[8], direction[9], direction[10], direction[11], fillcolor=backgroundColor, color=backgroundColor)
+      lcd.triangle(direction[6], direction[7], direction[8], direction[9], direction[10], direction[11], fillcolor=arrowColor, color=arrowColor)
 
 def printScreen():
   global response, mode, brightness, emergency, emergencyPause, MIN, MAX, EMERGENCY_MIN, EMERGENCY_MAX, currentBackgroudColor
@@ -150,11 +150,13 @@ def printScreen():
     direction = directions[directionStr] 
     
     if not olderThanHour and (directionStr == 'DoubleDown' or directionStr == 'DoubleUp'): 
-      backgroundColor=lcd.RED
+      arrowColor = lcd.RED
     elif not olderThanHour and (directionStr == 'SingleUp' or directionStr == 'SingleDown'):
-      backgroundColor=lcd.ORANGE
+      arrowColor = lcd.ORANGE
+    else:
+      arrowColor = backgroundColor  
     
-    drawDirection(x, y, direction, backgroundColor)
+    drawDirection(x, y, direction, arrowColor=arrowColor)
 
     #sgv
     lcd.font(lcd.FONT_DejaVu56, rotate=0)
@@ -171,7 +173,7 @@ def printScreen():
 
     #direction
     x=58
-    y=44
+    y=52
     
     directions = {'Flat': (x+15, y-20, x+15, y+20, x-25, y), 
         'FortyFiveDown': (x-15, y-20, x-15, y+20, x+25, y),
@@ -184,23 +186,25 @@ def printScreen():
     direction = directions[directionStr] 
     
     if not olderThanHour and (directionStr == 'DoubleDown' or directionStr == 'DoubleUp'): 
-      backgroundColor=lcd.RED
+      arrowColor = lcd.RED
     elif not olderThanHour and (directionStr == 'SingleUp' or directionStr == 'SingleDown'):
-      backgroundColor=lcd.ORANGE
+      arrowColor = lcd.ORANGE
+    else:
+      arrowColor = backgroundColor  
     
-    drawDirection(x, y, direction, backgroundColor)
+    drawDirection(x, y, direction, arrowColor=arrowColor)
 
     #sgv
     lcd.font(lcd.FONT_DejaVu56, rotate=180)
     lcd.textClear(206-lcd.textWidth(sgvStr), 66-lcd.fontSize()[1], sgvStr, backgroundColor)
-    lcd.print(sgvStr, 206, 66)
+    lcd.print(sgvStr, 206, 78)
 
     #ago or date
-    lcd.font(lcd.FONT_DejaVu24, rotate=180)
+    lcd.font(lcd.FONT_DejaVu18, rotate=180)
     x = (int)(240-((240-lcd.textWidth(dateStr))/2))
     if x>216: x=216
     lcd.fillRect(0, 110-lcd.fontSize()[1], 240, 110, backgroundColor)
-    lcd.print(dateStr, x, 110)
+    lcd.print(dateStr, x, 118)
     
 def callBackend():
   global response, INTERVAL, API_ENDPOINT, API_TOKEN, LOCALE, TIMEZONE
