@@ -163,7 +163,8 @@ def printScreen():
     
     #ago or date
     lcd.font(lcd.FONT_DejaVu24, rotate=0)
-    lcd.textClear((int)((240-lcd.textWidth(dateStr))/2), 100, dateStr, backgroundColor)
+    f=lcd.fontSize()
+    lcd.fillRect(0, 100, 240, 100+f[1], backgroundColor)
     lcd.print(dateStr, (int)((240-lcd.textWidth(dateStr))/2), 100)
   elif mode in range(4,7):
     #flip mode
@@ -198,7 +199,7 @@ def printScreen():
     lcd.font(lcd.FONT_DejaVu24, rotate=180)
     x = (int)(240-((240-lcd.textWidth(dateStr))/2))
     if x>216: x=216
-    lcd.textClear(x-lcd.textWidth(" " + dateStr + " "), 110-lcd.fontSize()[1], " " + dateStr + " ", backgroundColor)
+    lcd.fillRect(0, 110-lcd.fontSize()[1], 240, 110, backgroundColor)
     lcd.print(dateStr, x, 110)
     
 def callBackend():
