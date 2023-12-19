@@ -70,16 +70,20 @@ def getBatteryLevel():
   if volt < 4.20: return 100
   if volt >= 4.20: return 101
 
-def printCenteredText(msg, font=lcd.FONT_DejaVu24, rotateAngle=0, backgroundColor=lcd.BLACK, textColor=lcd.WHITE):
+def printCenteredText(msg, font=lcd.FONT_DejaVu24, rotateAngle=0, backgroundColor=lcd.BLACK, textColor=lcd.WHITE, clear=False):
   lcd.font(font, rotate=rotateAngle)
-  lcd.clear(backgroundColor)
+  if clear == True:
+     lcd.clear(backgroundColor)
   lcd.setTextColor(textColor)
   w = lcd.textWidth(msg)
+  f = lcd.fontSize()
   if rotateAngle==180:
-    lcd.text((int)(w+((240-w)/2)), 80, msg)
+    lcd.textClear((int)(w+((240-w)/2)), 80, msg, backgroundColor)
+    lcd.print(msg, (int)(w+((240-w)/2)), 80)
   else:
-    f = lcd.fontSize()
-    lcd.text((int)((240-w)/2), (int)(80-f[0]), msg)
+    #lcd.fillRect((int)((240-w)/2), (int)(80-f[0]), w, f[1], backgroundColor)
+    lcd.textClear((int)((240-w)/2), (int)(80-f[0]), msg, backgroundColor)
+    lcd.print(msg, (int)((240-w)/2), (int)(80-f[0]))
 
 def drawDirection(x, y, direction, backgroundColor, fillColor=lcd.WHITE):
     lcd.circle(x, y, 40, fillcolor=fillColor)
@@ -88,7 +92,7 @@ def drawDirection(x, y, direction, backgroundColor, fillColor=lcd.WHITE):
       lcd.triangle(direction[6], direction[7], direction[8], direction[9], direction[10], direction[11], fillcolor=backgroundColor, color=backgroundColor)
 
 def printScreen():
-  global response, mode, brightness, emergency, emergencyPause, MIN, MAX, EMERGENCY_MIN, EMERGENCY_MAX, basicModeBackgroudColor
+  global response, mode, brightness, emergency, emergencyPause, MIN, MAX, EMERGENCY_MIN, EMERGENCY_MAX, currentBackgroudColor
 
   sgv = response['sgv']
   sgvStr = str(response['sgv'])
@@ -121,16 +125,15 @@ def printScreen():
   #if emergency change to one of full modes 
   if emergency==True and mode==3: mode=0
 
-  #in basic mode skip background clearing if color doesn't change  
-  if (mode != 3 or basicModeBackgroudColor != backgroundColor):
-     lcd.clear(backgroundColor)
-     lcd.setTextColor(lcd.WHITE)
-  if mode == 3:   
-     basicModeBackgroudColor = backgroundColor
-     print("Skipping background clearing")
-  else:
-     basicModeBackgroudColor = -1   
+  lcd.setTextColor(lcd.WHITE)
 
+  #in skip background clearing if color doesn't change  
+  if (currentBackgroudColor != backgroundColor):
+     lcd.clear(backgroundColor)
+     currentBackgroudColor = backgroundColor
+  else:
+     print("Skipping background clearing")
+  
   if mode in range (0,3):  
     #full mode
     
@@ -157,11 +160,13 @@ def printScreen():
 
     #sgv
     lcd.font(lcd.FONT_DejaVu56, rotate=0)
-    lcd.text(12, 24, sgvStr)
+    lcd.textClear(12, 24, sgvStr, backgroundColor)
+    lcd.print(sgvStr, 12, 24)
     
     #ago or date
     lcd.font(lcd.FONT_DejaVu24, rotate=0)
-    lcd.text((int)((240-lcd.textWidth(dateStr))/2), 100, dateStr)
+    lcd.textClear((int)((240-lcd.textWidth(dateStr))/2), 100, dateStr, backgroundColor)
+    lcd.print(dateStr, (int)((240-lcd.textWidth(dateStr))/2), 100)
   elif mode in range(4,7):
     #flip mode
 
@@ -188,13 +193,15 @@ def printScreen():
 
     #sgv
     lcd.font(lcd.FONT_DejaVu56, rotate=180)
-    lcd.text(206, 66, sgvStr)
+    lcd.textClear(206, 66, sgvStr, backgroundColor)
+    lcd.print(sgvStr, 206, 66)
 
     #ago or date
     lcd.font(lcd.FONT_DejaVu24, rotate=180)
     x = (int)(240-((240-lcd.textWidth(dateStr))/2))
     if x>216: x=216
-    lcd.text(x, 110, dateStr)
+    lcd.textClear(x, 110, dateStr, backgroundColor)
+    lcd.print(dateStr, x, 110)
     
 def callBackend():
   global response, INTERVAL, API_ENDPOINT, API_TOKEN, LOCALE, TIMEZONE
@@ -215,13 +222,14 @@ def callBackend():
       time.sleep(retry)
 
 def onBtnAPressed():
-  global mode, MODES, emergency, emergencyPause
+  global mode, MODES, emergency, emergencyPause, currentBackgroudColor
   if emergency == True:
     emergency = False
     emergencyPause = utime.time() + 1800 #30 mins
   else:   
     if mode == 6: mode = 0
     elif mode < 6: mode += 1 
+    currentBackgroudColor = -1
     print('Selected mode ' + MODES[mode])
     printScreen()
 
@@ -278,14 +286,14 @@ response = {}
 brightness = 32
 emergency = False
 emergencyPause = 0
-basicModeBackgroudColor = -1
+currentBackgroudColor = -1
 
 beeper = PWM(Pin(2), freq=1000, duty=50)
 beeper.pause()
 
 axp.setLcdBrightness(brightness)
 lcd.orient(lcd.LANDSCAPE)
-lcd.clear(lcd.WHITE)
+lcd.clear(lcd.DARKGREY)
 
 
 nic = network.WLAN(network.STA_IF)
@@ -302,17 +310,17 @@ while not found:
       if ssid in WIFI: found = True; SSID=ssid; WIFI_PASSWORD=WIFI[ssid]; break
   except Exception as e:
       sys.print_exception(e)
-      printCenteredText("Saved wifi not found!", backgroundColor=lcd.RED)  
+      printCenteredText("Saved wifi not found!", backgroundColor=lcd.RED, clear=True)  
   if not found: time.sleep(1)
 
-printCenteredText("Connecting wifi...", backgroundColor=lcd.OLIVE)
+printCenteredText("Connecting wifi...", backgroundColor=lcd.DARKGREY) #lcd.OLIVE)
 nic.connect(SSID, WIFI_PASSWORD)
 print('Connecting wifi ' + SSID)
 while not nic.isconnected():
   print(".", end="")
   time.sleep(0.25)
 
-printCenteredText("Setting time...", backgroundColor=lcd.GREENYELLOW)
+printCenteredText("Setting time...", backgroundColor=lcd.DARKGREY) #lcd.GREENYELLOW)
 
 try: 
   rtc = machine.RTC()
@@ -320,7 +328,7 @@ try:
   rtc.datetime((tm[0], tm[1], tm[2], tm[6] + 1, tm[3], tm[4], tm[5], 0))
   print("Current time " +  str(rtc.datetime()))
 
-  printCenteredText("Loading data...", backgroundColor=lcd.DARKGREEN)
+  printCenteredText("Loading data...", backgroundColor=lcd.DARKGREY) #lcd.DARKGREEN)
 
   _thread.start_new_thread(callBackend, ())
   _thread.start_new_thread(emergencyMonitor, ())
@@ -329,5 +337,5 @@ try:
   btnB.wasPressed(onBtnBPressed)
 except Exception as e:
   sys.print_exception(e)
-  printCenteredText("Restart required!", backgroundColor=lcd.RED)
+  printCenteredText("Restart required!", backgroundColor=lcd.RED, clear=True)
   
