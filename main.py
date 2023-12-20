@@ -117,8 +117,6 @@ def printScreen():
   except Exception as e:
     sys.print_exception(e)
 
-  axp.setLcdBrightness(brightness)
-
   if olderThanHour: backgroundColor=lcd.DARKGREY; M5Led.on(); emergency=False
   elif sgv <= EMERGENCY_MIN: backgroundColor=lcd.RED; M5Led.on(); emergency=(utime.time() > emergencyPause)  
   elif sgv > EMERGENCY_MIN and sgv <= MIN: backgroundColor=lcd.RED; M5Led.on(); emergency=False
