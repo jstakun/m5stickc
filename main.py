@@ -42,7 +42,7 @@ def isOlderThanHour(date_str):
   now = utime.time() #UTC
   #print(str(rtc.datetime()) + " " + str(the_date))
   diff = (now - seconds + 3600)
-  print('Current entry is ' + str(diff) + ' seconds old')
+  printTime(diff, prefix='Current entry is', suffix='old')
   return diff > 3600  
 
 def getBatteryLevel():
@@ -70,6 +70,11 @@ def getBatteryLevel():
   if volt < 4.15: return 95
   if volt < 4.20: return 100
   if volt >= 4.20: return 101
+
+def printTime(seconds, prefix='', suffix=''):
+  m, s = divmod(seconds, 60)
+  h, m = divmod(m, 60)
+  print(prefix + ' {:02d}:{:02d}:{:02d} '.format(h, m, s) + suffix)  
 
 def printCenteredText(msg, font=lcd.FONT_DejaVu24, rotateAngle=0, backgroundColor=lcd.BLACK, textColor=lcd.WHITE, clear=False):
   lcd.font(font, rotate=rotateAngle)
@@ -161,7 +166,7 @@ def printScreen():
 
     #sgv
     lcd.font(lcd.FONT_DejaVu56, rotate=0)
-    lcd.textClear(12, 24, sgvStr, backgroundColor)
+    lcd.textClear(12, 24, "888", backgroundColor)
     lcd.print(sgvStr, 12, 24)
     
     #ago or date
@@ -199,7 +204,7 @@ def printScreen():
     lcd.font(lcd.FONT_DejaVu56, rotate=180)
     x = 206
     y = 78
-    lcd.textClear(x-lcd.textWidth(sgvStr), y-lcd.fontSize()[1], sgvStr, backgroundColor)
+    lcd.textClear(x-lcd.textWidth("888"), y-lcd.fontSize()[1], "888", backgroundColor)
     lcd.print(sgvStr, x, y)
 
     #ago or date
@@ -211,11 +216,12 @@ def printScreen():
     lcd.print(dateStr, x, y)
     
 def backendMonitor():
-  global response, INTERVAL, API_ENDPOINT, API_TOKEN, LOCALE, TIMEZONE
+  global response, INTERVAL, API_ENDPOINT, API_TOKEN, LOCALE, TIMEZONE, startTime
   while True:
     try:
       print('Battery level: ' + str(getBatteryLevel()) + '%')
       print('Free memory: ' + str(gc.mem_free()) + ' bytes')
+      printTime((utime.time() - startTime), prefix='Uptime is')
       response = urequests.get(API_ENDPOINT + "/1/api/v1/entries.json?count=1",headers={'api-secret': API_TOKEN,'accept-language': LOCALE,'accept-charset': 'ascii', 'x-gms-tz': TIMEZONE}).json()
       print('Sgv: ', response['sgv'])
       print('Read: ', response['date'])
@@ -339,6 +345,7 @@ try:
   tm = utime.localtime(currentTime())
   rtc.datetime((tm[0], tm[1], tm[2], tm[6] + 1, tm[3], tm[4], tm[5], 0))
   print("Current time " +  str(rtc.datetime()))
+  startTime = utime.time()
 
   printCenteredText("Loading data...", backgroundColor=lcd.DARKGREY) #lcd.DARKGREEN)
 
