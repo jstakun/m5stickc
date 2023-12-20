@@ -8,6 +8,7 @@ import utime
 from machine import Pin, PWM
 import usocket as socket
 import ustruct as struct
+import gc
 
 def currentTime():
   NTP_QUERY = bytearray(48)
@@ -209,11 +210,12 @@ def printScreen():
     lcd.fillRect(0, y-lcd.fontSize()[1], 240, y, backgroundColor)
     lcd.print(dateStr, x, y)
     
-def callBackend():
+def backendMonitor():
   global response, INTERVAL, API_ENDPOINT, API_TOKEN, LOCALE, TIMEZONE
   while True:
     try:
       print('Battery level: ' + str(getBatteryLevel()) + '%')
+      print('Free memory: ' + str(gc.mem_free()) + ' bytes')
       response = urequests.get(API_ENDPOINT + "/1/api/v1/entries.json?count=1",headers={'api-secret': API_TOKEN,'accept-language': LOCALE,'accept-charset': 'ascii', 'x-gms-tz': TIMEZONE}).json()
       print('Sgv: ', response['sgv'])
       print('Read: ', response['date'])
@@ -272,6 +274,9 @@ def emergencyMonitor():
 
 ########################################    
 
+print('Booting...')
+print('Free memory: ' + str(gc.mem_free()) + ' bytes')
+
 confFile = open('config.json', 'r')
 config = ujson.loads(confFile.read())
 
@@ -325,6 +330,7 @@ print('Connecting wifi ' + SSID)
 while not nic.isconnected():
   print(".", end="")
   time.sleep(0.25)
+print("")  
 
 printCenteredText("Setting time...", backgroundColor=lcd.DARKGREY) #lcd.GREENYELLOW)
 
@@ -336,7 +342,7 @@ try:
 
   printCenteredText("Loading data...", backgroundColor=lcd.DARKGREY) #lcd.DARKGREEN)
 
-  _thread.start_new_thread(callBackend, ())
+  _thread.start_new_thread(backendMonitor, ())
   _thread.start_new_thread(emergencyMonitor, ())
 
   btnA.wasPressed(onBtnAPressed)
