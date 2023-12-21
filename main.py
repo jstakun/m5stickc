@@ -40,9 +40,8 @@ def isOlderThanHour(date_str):
   the_date = (yyyy, mm, dd, HH, MM, SS, 0, 0, 0)
   seconds = utime.mktime(the_date) #UTC+1
   now = utime.time() #UTC
-  #print(str(rtc.datetime()) + " " + str(the_date))
   diff = (now - seconds + 3600)
-  printTime(diff, prefix='Current entry is', suffix='old')
+  printTime(diff, prefix='Entry read', suffix='ago')
   return diff > 3600  
 
 def getBatteryLevel():
@@ -94,6 +93,7 @@ def drawDirection(x, y, direction, arrowColor, fillColor=lcd.WHITE):
     lcd.triangle(direction[0], direction[1], direction[2], direction[3], direction[4], direction[5], fillcolor=arrowColor, color=arrowColor)
     if len(direction) == 12:
       lcd.triangle(direction[6], direction[7], direction[8], direction[9], direction[10], direction[11], fillcolor=arrowColor, color=arrowColor)
+    lcd.circle(direction[0], direction[1], 4, fillcolor=lcd.BLACK)
 
 def printScreen():
   global response, mode, brightness, emergency, emergencyPause, MIN, MAX, EMERGENCY_MIN, EMERGENCY_MAX, currentBackgroudColor
@@ -143,13 +143,13 @@ def printScreen():
     x=178
     y=48
     
-    directions = {'Flat': (x-15, y-20, x-15, y+20, x+25, y), 
-        'FortyFiveDown': (x+15, y-20, x+15, y+20, x-25, y),
+    directions = {'Flat': (x+25, y, x-15, y-20, x-15, y+20), 
+        'FortyFiveDown': (x+15, y+20, x+15, y-20, x-25, y),
         'FortyFiveUp': (x+15, y-20, x+15, y+20, x-25, y), 
-        'DoubleDown': (x-20, y, x+20, y, x, y+30, x-20, y-25, x+20, y-25, x, y+10),
-        'DoubleUp': (x-20, y+18, x+20, y+18, x, y-7, x-20, y-5, x+20, y-5, x, y-30), 
-        'SingleUp': (x-20, y+15, x+20, y+15, x, y-25),
-        'SingleDown': (x-20, y-15, x+20, y-15, x, y+25)} 
+        'DoubleDown': (x, y+30, x-20, y, x+20, y, x, y+10, x-20, y-25, x+20, y-25),
+        'DoubleUp': (x, y-7, x-20, y+18, x+20, y+18, x, y-30, x-20, y-5, x+20, y-5), 
+        'SingleUp': (x, y-25, x-20, y+15, x+20, y+15),
+        'SingleDown': (x, y+25, x-20, y-15, x+20, y-15)} 
     
     direction = directions[directionStr] 
     
@@ -179,13 +179,13 @@ def printScreen():
     x=58
     y=52
     
-    directions = {'Flat': (x+15, y-20, x+15, y+20, x-25, y), 
+    directions = {'Flat': (x-25, y, x+15, y-20, x+15, y+20), 
         'FortyFiveDown': (x-15, y-20, x-15, y+20, x+25, y),
         'FortyFiveUp': (x-15, y-20, x-15, y+20, x+25, y), 
-        'DoubleDown': (x-20, y+18, x+20, y+18, x, y-7, x-20, y-5, x+20, y-5, x, y-30),
-        'DoubleUp': (x-20, y, x+20, y, x, y+30, x-20, y-25, x+20, y-25, x, y+10), 
-        'SingleUp': (x-20, y-15, x+20, y-15, x, y+25),
-        'SingleDown': (x-20, y+15, x+20, y+15, x, y-25)} 
+        'DoubleDown': (x, y-7, x-20, y+18, x+20, y+18, x, y-30, x-20, y-5, x+20, y-5),
+        'DoubleUp': (x, y+30, x-20, y, x+20, y, x, y+10, x-20, y-25, x+20, y-25), 
+        'SingleUp': (x, y+25, x-20, y-15, x+20, y-15),
+        'SingleDown': (x, y-25, x-20, y+15, x+20, y+15)} 
     
     direction = directions[directionStr] 
     
