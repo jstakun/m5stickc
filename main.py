@@ -89,7 +89,7 @@ def printCenteredText(msg, font=lcd.FONT_DejaVu24, rotateAngle=0, backgroundColo
     lcd.print(msg, (int)((240-w)/2), (int)(80-f[1]))
 
 def drawDirection(x, y, direction, arrowColor, fillColor=lcd.WHITE):
-    lcd.circle(x, y, 40, fillcolor=fillColor)
+    lcd.circle(x, y, 40, fillcolor=fillColor, color=fillColor)
     lcd.triangle(direction[0], direction[1], direction[2], direction[3], direction[4], direction[5], fillcolor=arrowColor, color=arrowColor)
     if len(direction) == 12:
       lcd.triangle(direction[6], direction[7], direction[8], direction[9], direction[10], direction[11], fillcolor=arrowColor, color=arrowColor)
@@ -182,7 +182,7 @@ def printScreen():
     directions = {'Flat': (x-25, y, x+15, y-20, x+15, y+20), 
         'FortyFiveDown': (x-15, y-20, x-15, y+20, x+25, y),
         'FortyFiveUp': (x-15, y+20, x-15, y-20, x+25, y), 
-        'DoubleDown': (x, y-7, x-20, y+18, x+20, y+18, x, y-30, x-20, y-5, x+20, y-5),
+        'DoubleDown': (x, y-30, x-20, y-5, x+20, y-5, x, y-7, x-20, y+18, x+20, y+18),
         'DoubleUp': (x, y+30, x-20, y, x+20, y, x, y+10, x-20, y-25, x+20, y-25), 
         'SingleUp': (x, y+25, x-20, y-15, x+20, y-15),
         'SingleDown': (x, y-25, x-20, y+15, x+20, y+15)} 
