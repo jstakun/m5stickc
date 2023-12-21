@@ -239,8 +239,8 @@ def onBtnAPressed():
     emergency = False
     emergencyPause = utime.time() + 1800 #30 mins
   else:   
-    if mode == 6: mode = 0
-    elif mode < 6: mode += 1 
+    if mode == (len(MODES)-1): mode = 0
+    else: mode += 1 
     currentBackgroudColor = -1
     print('Selected mode ' + MODES[mode])
     printScreen()
