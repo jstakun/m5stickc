@@ -93,7 +93,7 @@ def drawDirection(x, y, direction, arrowColor, fillColor=lcd.WHITE):
     lcd.triangle(direction[0], direction[1], direction[2], direction[3], direction[4], direction[5], fillcolor=arrowColor, color=arrowColor)
     if len(direction) == 12:
       lcd.triangle(direction[6], direction[7], direction[8], direction[9], direction[10], direction[11], fillcolor=arrowColor, color=arrowColor)
-    lcd.circle(direction[0], direction[1], 4, fillcolor=lcd.BLACK)
+    lcd.circle(direction[0], direction[1], 4, fillcolor=arrowColor, color=arrowColor)
 
 def printScreen():
   global response, mode, brightness, emergency, emergencyPause, MIN, MAX, EMERGENCY_MIN, EMERGENCY_MAX, currentBackgroudColor
@@ -181,7 +181,7 @@ def printScreen():
     
     directions = {'Flat': (x-25, y, x+15, y-20, x+15, y+20), 
         'FortyFiveDown': (x-15, y-20, x-15, y+20, x+25, y),
-        'FortyFiveUp': (x-15, y-20, x-15, y+20, x+25, y), 
+        'FortyFiveUp': (x-15, y+20, x-15, y-20, x+25, y), 
         'DoubleDown': (x, y-7, x-20, y+18, x+20, y+18, x, y-30, x-20, y-5, x+20, y-5),
         'DoubleUp': (x, y+30, x-20, y, x+20, y, x, y+10, x-20, y-25, x+20, y-25), 
         'SingleUp': (x, y+25, x-20, y-15, x+20, y-15),
