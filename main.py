@@ -146,7 +146,7 @@ def printScreen():
     directions = {'Flat': (x+25, y, x-15, y-20, x-15, y+20), 
         'FortyFiveDown': (x+15, y+20, x+15, y-20, x-25, y),
         'FortyFiveUp': (x+15, y-20, x+15, y+20, x-25, y), 
-        'DoubleDown': (y+10, x-20, y-25, x+20, y-25, x, y+30, x-20, y, x+20, y, x),
+        'DoubleDown': (x, y+10, x-20, y-25, x+20, y-25, x, y+30, x-20, y, x+20, y),
         'DoubleUp': (x, y-7, x-20, y+18, x+20, y+18, x, y-30, x-20, y-5, x+20, y-5), 
         'SingleUp': (x, y-25, x-20, y+15, x+20, y+15),
         'SingleDown': (x, y+25, x-20, y-15, x+20, y-15)} 
@@ -220,7 +220,7 @@ def backendMonitor():
       print('Battery level: ' + str(getBatteryLevel()) + '%')
       print('Free memory: ' + str(gc.mem_free()) + ' bytes')
       printTime((utime.time() - startTime), prefix='Uptime is')
-      response = urequests.get(API_ENDPOINT + "/1/api/v1/entries.json?count=1",headers={'api-secret': API_TOKEN,'accept-language': LOCALE,'accept-charset': 'ascii', 'x-gms-tz': TIMEZONE}).json()
+      response = urequests.get(API_ENDPOINT + "/entries.json?count=1",headers={'api-secret': API_TOKEN,'accept-language': LOCALE,'accept-charset': 'ascii', 'x-gms-tz': TIMEZONE}).json()
       print('Sgv: ', response['sgv'])
       print('Read: ', response['date'])
       print('Direction: ', response['direction'])
