@@ -9,6 +9,8 @@ from machine import Pin, PWM
 import usocket as socket
 import ustruct as struct
 import gc
+import deviceCfg
+import wifiCfg
 
 def currentTime():
   NTP_QUERY = bytearray(48)
@@ -95,25 +97,51 @@ def drawDirection(x, y, direction, arrowColor, fillColor=lcd.WHITE):
       lcd.triangle(direction[6], direction[7], direction[8], direction[9], direction[10], direction[11], fillcolor=arrowColor, color=arrowColor)
     lcd.circle(direction[0], direction[1], 4, fillcolor=arrowColor, color=arrowColor)
 
+def printChart():
+  global response
+
+  lcd.fillRect(0, 0, 240, 50, lcd.ORANGE)
+  lcd.fillRect(0, 50, 240, 101, lcd.LIGHTGREY)
+  lcd.fillRect(0, 101, 240, 136, lcd.RED)
+
+  diameter=4
+  points=10
+  space=(int)(240/(points-1))
+
+  prevx=-1
+  prevy=-1
+
+  for idv, entry in enumerate(response):
+    x=(int)(diameter+(points-idv-1)*space)
+    y=(int)(136-entry["sgv"]/2)
+    #print(str(x) + " " + str(y))
+    lcd.circle(x, y, 4, fillcolor=lcd.BLACK, color=lcd.BLACK)
+    if prevx>-1 and prevy>-1:
+      lcd.line(prevx, prevy, x, y, color=lcd.BLACK)
+    prevx=x
+    prevy=y  
+
+
 def printScreen():
   global response, mode, brightness, emergency, emergencyPause, MIN, MAX, EMERGENCY_MIN, EMERGENCY_MAX, currentBackgroudColor
-
-  sgv = response[0]['sgv']
-  sgvStr = str(response[0]['sgv'])
+  
+  newest = response[0]
+  sgv = newest['sgv']
+  sgvStr = str(newest['sgv'])
   if sgv < 100: sgvStr = " " + sgvStr
 
-  directionStr = response[0]['direction']
-
-  if "ago" in response[0] and (mode == 0 or mode == 4): 
-    dateStr = response[0]['ago']
+  directionStr = newest['direction']
+  
+  if "ago" in newest and (mode == 0 or mode == 4): 
+    dateStr = newest['ago']
   elif mode == 2 or mode == 6:
     dateStr = "Battery: " + str(getBatteryLevel()) + "%"
   else:   
-    dateStr = response[0]['date'].replace("T", " ")[:-3] #remove seconds to fit screen
+    dateStr = newest['date'].replace("T", " ")[:-3] #remove seconds to fit screen
 
   olderThanHour = False
   try:
-    olderThanHour = isOlderThanHour(response[0]['date'])
+    olderThanHour = isOlderThanHour(newest['date'])
   except Exception as e:
     sys.print_exception(e)
 
@@ -127,7 +155,7 @@ def printScreen():
   elif sgv > EMERGENCY_MAX: backgroundColor=lcd.ORANGE; M5Led.on(); emergency=(utime.time() > emergencyPause)  
 
   #if emergency change to one of full modes 
-  if emergency==True and mode==3: mode=0
+  if emergency==True and (mode==3 or mode==7) : mode=0
 
   lcd.setTextColor(lcd.WHITE)
 
@@ -214,7 +242,11 @@ def printScreen():
     y = 118
     lcd.fillRect(0, y-lcd.fontSize()[1], 240, y, backgroundColor)
     lcd.print(dateStr, x, y)
-    
+  elif mode == 7:
+    #chart
+    printChart()
+    currentBackgroudColor = -1
+
 def backendMonitor():
   global response, INTERVAL, API_ENDPOINT, API_TOKEN, LOCALE, TIMEZONE, startTime
   while True:
@@ -223,9 +255,9 @@ def backendMonitor():
       print('Free memory: ' + str(gc.mem_free()) + ' bytes')
       printTime((utime.time() - startTime), prefix='Uptime is')
       response = urequests.get(API_ENDPOINT + "/entries.json?count=10",headers={'api-secret': API_TOKEN,'accept-language': LOCALE,'accept-charset': 'ascii', 'x-gms-tz': TIMEZONE}).json()
-      print('Sgv: ', response[0]['sgv'])
-      print('Read: ', response[0]['date'])
-      print('Direction: ', response[0]['direction'])
+      print('Sgv:', response[0]['sgv'])
+      print('Read:', response[0]['date'])
+      print('Direction:', response[0]['direction'])
       printScreen()
       time.sleep(INTERVAL)
     except Exception as e:
@@ -280,7 +312,11 @@ def emergencyMonitor():
 
 ########################################    
 
-print('Booting...')
+print('Starting...')
+print("APIKEY: " + deviceCfg.get_apikey())
+macaddr=wifiCfg.wlan_sta.config('mac')
+macaddr='{:02x}:{:02x}:{:02x}:{:02x}:{:02x}:{:02x}'.format(*macaddr)
+print('MAC Adddress: ' + macaddr)
 print('Free memory: ' + str(gc.mem_free()) + ' bytes')
 
 confFile = open('config.json', 'r')
@@ -297,7 +333,7 @@ EMERGENCY_MIN = config["emergencyMin"]
 EMERGENCY_MAX = config["emergencyMax"] 
 TIMEZONE = config["timezone"]
 
-MODES = ["full_elapsed", "full_date", "full_battery", "basic", "flip_full_elapsed", "flip_full_date", "flip_full_battery"]
+MODES = ["full_elapsed", "full_date", "full_battery", "basic", "flip_full_elapsed", "flip_full_date", "flip_full_battery", "chart"]
 mode = 0
 response = {}
 brightness = 32
