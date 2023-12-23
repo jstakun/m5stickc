@@ -98,29 +98,31 @@ def drawDirection(x, y, direction, arrowColor, fillColor=lcd.WHITE):
 def printScreen():
   global response, mode, brightness, emergency, emergencyPause, MIN, MAX, EMERGENCY_MIN, EMERGENCY_MAX, currentBackgroudColor
 
-  sgv = response['sgv']
-  sgvStr = str(response['sgv'])
+  sgv = response[0]['sgv']
+  sgvStr = str(response[0]['sgv'])
   if sgv < 100: sgvStr = " " + sgvStr
 
-  directionStr = response['direction']
+  directionStr = response[0]['direction']
 
-  if "ago" in response and (mode == 0 or mode == 4): 
-    dateStr = response['ago']
+  if "ago" in response[0] and (mode == 0 or mode == 4): 
+    dateStr = response[0]['ago']
   elif mode == 2 or mode == 6:
     dateStr = "Battery: " + str(getBatteryLevel()) + "%"
   else:   
-    dateStr = response['date'].replace("T", " ")[:-3] #remove seconds to fit screen
+    dateStr = response[0]['date'].replace("T", " ")[:-3] #remove seconds to fit screen
 
   olderThanHour = False
   try:
-    olderThanHour = isOlderThanHour(response['date'])
+    olderThanHour = isOlderThanHour(response[0]['date'])
   except Exception as e:
     sys.print_exception(e)
 
   if olderThanHour: backgroundColor=lcd.DARKGREY; M5Led.on(); emergency=False
   elif sgv <= EMERGENCY_MIN: backgroundColor=lcd.RED; M5Led.on(); emergency=(utime.time() > emergencyPause)  
+  elif sgv >= (MIN-10) and sgv < MIN and directionStr.endswith("Up"): backgroundColor=lcd.DARKGREEN; emergency=False; M5Led.off()
   elif sgv > EMERGENCY_MIN and sgv <= MIN: backgroundColor=lcd.RED; M5Led.on(); emergency=False
   elif sgv > MIN and sgv <= MAX: backgroundColor=lcd.DARKGREEN; emergency=False; M5Led.off() 
+  elif sgv > MAX and sgv <= (MAX+10) and directionStr.endswith("Down"): backgroundColor=lcd.DARKGREEN; emergency=False; M5Led.off()
   elif sgv > MAX and sgv <= EMERGENCY_MAX: backgroundColor=lcd.ORANGE; M5Led.on(); emergency=False
   elif sgv > EMERGENCY_MAX: backgroundColor=lcd.ORANGE; M5Led.on(); emergency=(utime.time() > emergencyPause)  
 
@@ -220,10 +222,10 @@ def backendMonitor():
       print('Battery level: ' + str(getBatteryLevel()) + '%')
       print('Free memory: ' + str(gc.mem_free()) + ' bytes')
       printTime((utime.time() - startTime), prefix='Uptime is')
-      response = urequests.get(API_ENDPOINT + "/entries.json?count=1",headers={'api-secret': API_TOKEN,'accept-language': LOCALE,'accept-charset': 'ascii', 'x-gms-tz': TIMEZONE}).json()
-      print('Sgv: ', response['sgv'])
-      print('Read: ', response['date'])
-      print('Direction: ', response['direction'])
+      response = urequests.get(API_ENDPOINT + "/entries.json?count=10",headers={'api-secret': API_TOKEN,'accept-language': LOCALE,'accept-charset': 'ascii', 'x-gms-tz': TIMEZONE}).json()
+      print('Sgv: ', response[0]['sgv'])
+      print('Read: ', response[0]['date'])
+      print('Direction: ', response[0]['direction'])
       printScreen()
       time.sleep(INTERVAL)
     except Exception as e:
@@ -262,7 +264,7 @@ def emergencyMonitor():
     batteryLevel = getBatteryLevel();
     if emergency == True or (batteryLevel < 20 and batteryLevel > 0):
       if emergency == True:
-        print('Emergency glucose level ' + str(response['sgv']) + '!!!')
+        print('Emergency glucose level ' + str(response[0]['sgv']) + '!!!')
       elif batteryLevel < 20:
         print('Low battery level ' + str(batteryLevel) + "%!!!")
       beeper.resume()
@@ -309,7 +311,6 @@ beeper.pause()
 axp.setLcdBrightness(brightness)
 lcd.orient(lcd.LANDSCAPE)
 lcd.clear(lcd.DARKGREY)
-
 
 nic = network.WLAN(network.STA_IF)
 nic.active(True)
