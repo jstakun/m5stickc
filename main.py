@@ -147,7 +147,7 @@ def printScreen():
         'FortyFiveDown': (x+15, y+20, x+15, y-20, x-25, y),
         'FortyFiveUp': (x+15, y-20, x+15, y+20, x-25, y), 
         'DoubleDown': (x, y+10, x-20, y-25, x+20, y-25, x, y+30, x-20, y, x+20, y),
-        'DoubleUp': (x, y-7, x-20, y+18, x+20, y+18, x, y-30, x-20, y-5, x+20, y-5), 
+        'DoubleUp': (x, y-30, x-20, y-5, x+20, y-5, x, y-7, x-20, y+18, x+20, y+18), 
         'SingleUp': (x, y-25, x-20, y+15, x+20, y+15),
         'SingleDown': (x, y+25, x-20, y-15, x+20, y-15)} 
     
@@ -183,7 +183,7 @@ def printScreen():
         'FortyFiveDown': (x-15, y-20, x-15, y+20, x+25, y),
         'FortyFiveUp': (x-15, y+20, x-15, y-20, x+25, y), 
         'DoubleDown': (x, y-30, x-20, y-5, x+20, y-5, x, y-7, x-20, y+18, x+20, y+18),
-        'DoubleUp': (x, y+10, x-20, y-25, x+20, y-25, x, y+30, x-20, y, x+20, y), 
+        'DoubleUp': (x, y+30, x-20, y, x+20, y, x, y+10, x-20, y-25, x+20, y-25), 
         'SingleUp': (x, y+25, x-20, y-15, x+20, y-15),
         'SingleDown': (x, y-25, x-20, y+15, x+20, y+15)} 
     
