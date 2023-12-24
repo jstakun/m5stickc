@@ -11,6 +11,7 @@ import ustruct as struct
 import gc
 import deviceCfg
 import wifiCfg
+from collections import OrderedDict
 
 def getNtpTime():
   NTP_QUERY = bytearray(48)
@@ -101,7 +102,7 @@ def printDirection(x, y, direction, arrowColor, fillColor=lcd.WHITE):
   lcd.circle(direction[0], direction[1], 4, fillcolor=arrowColor, color=arrowColor)
 
 def printChart():
-  global response
+  global sgvDict
 
   #background
   lcd.fillRect(0, 0, 240, 50, lcd.ORANGE)
@@ -122,13 +123,13 @@ def printChart():
   prevx=-1
   prevy=-1
 
-  for idv, entry in enumerate(response):
-    the_date = getDateTuple(entry["date"])
+  for key in sgvDict:
+    the_date = utime.localtime(key)
     #print(str(the_date[3]) + ":" + str(the_date[4]))
     hourDiff = tm[3]+1-the_date[3]
     minutes = the_date[4]
     x=240-(hourDiff*120)-(tm[4]*2)+(minutes*2)
-    y=(int)(136-entry["sgv"]/2)
+    y=(int)(136-sgvDict[key]/2)
     #print(str(hourDiff) + " " + str(tm[4]) + " " + str(x) + "," + str(y))
     lcd.circle(x, y, 4, fillcolor=lcd.BLACK, color=lcd.BLACK)
     if prevx>-1 and prevy>-1:
@@ -261,26 +262,6 @@ def printScreen():
     printChart()
     currentBackgroudColor = -1
 
-def backendMonitor():
-  global response, INTERVAL, API_ENDPOINT, API_TOKEN, LOCALE, TIMEZONE, startTime
-  while True:
-    try:
-      print('Battery level: ' + str(getBatteryLevel()) + '%')
-      print('Free memory: ' + str(gc.mem_free()) + ' bytes')
-      printTime((utime.time() - startTime), prefix='Uptime is')
-      response = urequests.get(API_ENDPOINT + "/entries.json?count=10",headers={'api-secret': API_TOKEN,'accept-language': LOCALE,'accept-charset': 'ascii', 'x-gms-tz': TIMEZONE}).json()
-      print('Sgv:', response[0]['sgv'])
-      print('Read:', response[0]['date'])
-      print('Direction:', response[0]['direction'])
-      printScreen()
-      time.sleep(INTERVAL)
-    except Exception as e:
-      sys.print_exception(e)
-      retry = (int)(INTERVAL/4)
-      print('Battery level: ' + str(getBatteryLevel()) + '%')
-      print('Network error. Retry in ' + str(retry) + ' sec...')
-      time.sleep(retry)
-
 def onBtnAPressed():
   global mode, MODES, emergency, emergencyPause, currentBackgroudColor
   if emergency == True:
@@ -304,6 +285,43 @@ def onBtnBPressed():
     if brightness > 96: brightness = 16
     axp.setLcdBrightness(brightness)
 
+def backendMonitor():
+  global response, INTERVAL, API_ENDPOINT, API_TOKEN, LOCALE, TIMEZONE, startTime, sgvDict
+  while True:
+    try:
+      print('Battery level: ' + str(getBatteryLevel()) + '%')
+      print('Free memory: ' + str(gc.mem_free()) + ' bytes')
+      printTime((utime.time() - startTime), prefix='Uptime is')
+      response = urequests.get(API_ENDPOINT + "/entries.json?count=10",headers={'api-secret': API_TOKEN,'accept-language': LOCALE,'accept-charset': 'ascii', 'x-gms-tz': TIMEZONE}).json()
+      print('Sgv:', response[0]['sgv'])
+      print('Read:', response[0]['date'])
+      print('Direction:', response[0]['direction'])
+
+      d = OrderedDict()
+      seconds = -1
+      for index, entry in enumerate(response):
+        the_date = getDateTuple(entry['date'])  
+        seconds = utime.mktime(the_date)
+        d.update({seconds: entry['sgv']})
+        
+      for key in sgvDict:
+        dictLen = len(d)
+        if key < seconds and dictLen < 30:
+          d.update({key: sgvDict[key]})
+        elif dictLen >= 30:
+          break  
+
+      sgvDict = d
+      print(sgvDict)  
+      
+      printScreen()
+      time.sleep(INTERVAL)
+    except Exception as e:
+      sys.print_exception(e)
+      retry = (int)(INTERVAL/4)
+      print('Battery level: ' + str(getBatteryLevel()) + '%')
+      print('Network error. Retry in ' + str(retry) + ' sec...')
+      time.sleep(retry)
 def emergencyMonitor():
   global emergency, beeper, response
   while True:
@@ -354,6 +372,7 @@ brightness = 32
 emergency = False
 emergencyPause = 0
 currentBackgroudColor = -1
+sgvDict = {}
 
 beeper = PWM(Pin(2), freq=1000, duty=50)
 beeper.pause()
