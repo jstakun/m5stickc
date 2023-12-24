@@ -111,9 +111,11 @@ def printChart():
   #hour lines
   tm = utime.localtime(utime.time())
   
-  x=120+(tm[4]*2)
+  x=240-(tm[4]*2)
   lcd.line(x, 0, x, 136, color=lcd.BLACK)
-  x=(tm[4]*2)
+  x-=120
+  lcd.line(x, 0, x, 136, color=lcd.BLACK)
+  x-=120
   lcd.line(x, 0, x, 136, color=lcd.BLACK)
   
   #sgv values
@@ -122,10 +124,12 @@ def printChart():
 
   for idv, entry in enumerate(response):
     the_date = getDateTuple(entry["date"])
-    hourDiff = tm[3]-the_date[3]
+    #print(str(the_date[3]) + ":" + str(the_date[4]))
+    hourDiff = tm[3]+1-the_date[3]
     minutes = the_date[4]
-    x=240-(hourDiff*120)-(60-minutes)*2
+    x=240-(hourDiff*120)-(tm[4]*2)+(minutes*2)
     y=(int)(136-entry["sgv"]/2)
+    #print(str(hourDiff) + " " + str(tm[4]) + " " + str(x) + "," + str(y))
     lcd.circle(x, y, 4, fillcolor=lcd.BLACK, color=lcd.BLACK)
     if prevx>-1 and prevy>-1:
       lcd.line(prevx, prevy, x, y, color=lcd.BLACK)
