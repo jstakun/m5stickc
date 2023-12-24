@@ -108,7 +108,9 @@ def printChart():
   lcd.fillRect(0, 0, 240, 50, lcd.ORANGE)
   lcd.fillRect(0, 50, 240, 101, lcd.LIGHTGREY)
   lcd.fillRect(0, 101, 240, 136, lcd.RED)
-
+  lcd.line(0, 50, 240, 50, color=lcd.BLACK)
+  lcd.line(0, 101, 240, 101, color=lcd.BLACK)
+  
   #hour lines
   tm = utime.localtime(utime.time())
   
@@ -132,7 +134,7 @@ def printChart():
     y=(int)(136-sgvDict[key]/2)
     #print(str(hourDiff) + " " + str(tm[4]) + " " + str(x) + "," + str(y))
     lcd.circle(x, y, 4, fillcolor=lcd.BLACK, color=lcd.BLACK)
-    if prevx>-1 and prevy>-1:
+    if prevx>-1 and prevy>-1 and (prevx-x)<=60:
       lcd.line(prevx, prevy, x, y, color=lcd.BLACK)
     prevx=x
     prevy=y  
@@ -303,7 +305,8 @@ def backendMonitor():
         the_date = getDateTuple(entry['date'])  
         seconds = utime.mktime(the_date)
         d.update({seconds: entry['sgv']})
-        
+
+      dictLen = 0  
       for key in sgvDict:
         dictLen = len(d)
         if key < seconds and dictLen < 30:
@@ -312,7 +315,8 @@ def backendMonitor():
           break  
 
       sgvDict = d
-      print(sgvDict)  
+      print('Cached ' + str(dictLen) + " sgv entries")
+      #print(sgvDict)  
       
       printScreen()
       time.sleep(INTERVAL)
