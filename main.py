@@ -35,7 +35,7 @@ def currentTime():
       raise Exception("Unsupported epoch: {}".format(EPOCH_YEAR))
   return val - NTP_DELTA
 
-def isOlderThanHour(date_str): 
+def isOlderThan(date_str, mins): 
   global rtc
   [yyyy, mm, dd] = [int(i) for i in date_str.split('T')[0].split('-')]
   [HH, MM, SS] = [int(i) for i in date_str.split('T')[1].split(':')]
@@ -44,7 +44,7 @@ def isOlderThanHour(date_str):
   now = utime.time() #UTC
   diff = (now - seconds + 3600)
   printTime(diff, prefix='Entry read', suffix='ago')
-  return diff > 3600  
+  return diff > (60 * mins) 
 
 def getBatteryLevel():
   volt = axp.getBatVoltage()
@@ -131,21 +131,21 @@ def printScreen():
   if sgv < 100: sgvStr = " " + sgvStr
 
   directionStr = newest['direction']
-  
-  if "ago" in newest and (mode == 0 or mode == 4): 
+
+  tooOld = False
+  try:
+    tooOld = isOlderThan(newest['date'], 30)
+  except Exception as e:
+    sys.print_exception(e)
+
+  if not tooOld and "ago" in newest and (mode == 0 or mode == 4): 
     dateStr = newest['ago']
   elif mode == 2 or mode == 6:
     dateStr = "Battery: " + str(getBatteryLevel()) + "%"
   else:   
     dateStr = newest['date'].replace("T", " ")[:-3] #remove seconds to fit screen
 
-  olderThanHour = False
-  try:
-    olderThanHour = isOlderThanHour(newest['date'])
-  except Exception as e:
-    sys.print_exception(e)
-
-  if olderThanHour: backgroundColor=lcd.DARKGREY; M5Led.on(); emergency=False
+  if tooOld: backgroundColor=lcd.DARKGREY; M5Led.on(); emergency=False
   elif sgv <= EMERGENCY_MIN: backgroundColor=lcd.RED; M5Led.on(); emergency=(utime.time() > emergencyPause)  
   elif sgv >= (MIN-10) and sgv < MIN and directionStr.endswith("Up"): backgroundColor=lcd.DARKGREEN; emergency=False; M5Led.off()
   elif sgv > EMERGENCY_MIN and sgv <= MIN: backgroundColor=lcd.RED; M5Led.on(); emergency=False
@@ -183,9 +183,9 @@ def printScreen():
     
     direction = directions[directionStr] 
     
-    if not olderThanHour and (directionStr == 'DoubleDown' or directionStr == 'DoubleUp'): 
+    if not tooOld and (directionStr == 'DoubleDown' or directionStr == 'DoubleUp'): 
       arrowColor = lcd.RED
-    elif not olderThanHour and (directionStr == 'SingleUp' or directionStr == 'SingleDown'):
+    elif not tooOld and (directionStr == 'SingleUp' or directionStr == 'SingleDown'):
       arrowColor = lcd.ORANGE
     else:
       arrowColor = backgroundColor  
@@ -219,9 +219,9 @@ def printScreen():
     
     direction = directions[directionStr] 
     
-    if not olderThanHour and (directionStr == 'DoubleDown' or directionStr == 'DoubleUp'): 
+    if not tooOld and (directionStr == 'DoubleDown' or directionStr == 'DoubleUp'): 
       arrowColor = lcd.RED
-    elif not olderThanHour and (directionStr == 'SingleUp' or directionStr == 'SingleDown'):
+    elif not tooOld and (directionStr == 'SingleUp' or directionStr == 'SingleDown'):
       arrowColor = lcd.ORANGE
     else:
       arrowColor = backgroundColor  
