@@ -12,34 +12,37 @@ import gc
 import deviceCfg
 import wifiCfg
 
-def currentTime():
+def getNtpTime():
   NTP_QUERY = bytearray(48)
   NTP_QUERY[0] = 0x1B
   addr = socket.getaddrinfo("pool.ntp.org", 123)[0][-1]
   s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
   try:
-      s.settimeout(1)
-      res = s.sendto(NTP_QUERY, addr)
-      msg = s.recv(48)
+    s.settimeout(1)
+    res = s.sendto(NTP_QUERY, addr)
+    msg = s.recv(48)
   finally:
-      s.close()
+    s.close()
   val = struct.unpack("!I", msg[40:44])[0]
   EPOCH_YEAR = utime.localtime(0)[0]
   if EPOCH_YEAR == 2000:
-      # (date(2000, 1, 1) - date(1900, 1, 1)).days * 24*60*60
-      NTP_DELTA = 3155673600
+    # (date(2000, 1, 1) - date(1900, 1, 1)).days * 24*60*60
+    NTP_DELTA = 3155673600
   elif EPOCH_YEAR == 1970:
-      # (date(1970, 1, 1) - date(1900, 1, 1)).days * 24*60*60
-      NTP_DELTA = 2208988800
+    # (date(1970, 1, 1) - date(1900, 1, 1)).days * 24*60*60
+    NTP_DELTA = 2208988800
   else:
-      raise Exception("Unsupported epoch: {}".format(EPOCH_YEAR))
+    raise Exception("Unsupported epoch: {}".format(EPOCH_YEAR))
   return val - NTP_DELTA
+
+def getDateTuple(date_str):
+  [yyyy, mm, dd] = [int(i) for i in date_str.split('T')[0].split('-')]
+  [HH, MM, SS] = [int(i) for i in date_str.split('T')[1].split(':')]
+  return (yyyy, mm, dd, HH, MM, SS, 0, 0, 0)
 
 def isOlderThan(date_str, mins): 
   global rtc
-  [yyyy, mm, dd] = [int(i) for i in date_str.split('T')[0].split('-')]
-  [HH, MM, SS] = [int(i) for i in date_str.split('T')[1].split(':')]
-  the_date = (yyyy, mm, dd, HH, MM, SS, 0, 0, 0)
+  the_date = getDateTuple(date_str)
   seconds = utime.mktime(the_date) #UTC+1
   now = utime.time() #UTC
   diff = (now - seconds + 3600)
@@ -90,37 +93,44 @@ def printCenteredText(msg, font=lcd.FONT_DejaVu24, rotateAngle=0, backgroundColo
   else:
     lcd.print(msg, (int)((240-w)/2), (int)(80-f[1]))
 
-def drawDirection(x, y, direction, arrowColor, fillColor=lcd.WHITE):
-    lcd.circle(x, y, 40, fillcolor=fillColor, color=fillColor)
-    lcd.triangle(direction[0], direction[1], direction[2], direction[3], direction[4], direction[5], fillcolor=arrowColor, color=arrowColor)
-    if len(direction) == 12:
-      lcd.triangle(direction[6], direction[7], direction[8], direction[9], direction[10], direction[11], fillcolor=arrowColor, color=arrowColor)
-    lcd.circle(direction[0], direction[1], 4, fillcolor=arrowColor, color=arrowColor)
+def printDirection(x, y, direction, arrowColor, fillColor=lcd.WHITE):
+  lcd.circle(x, y, 40, fillcolor=fillColor, color=fillColor)
+  lcd.triangle(direction[0], direction[1], direction[2], direction[3], direction[4], direction[5], fillcolor=arrowColor, color=arrowColor)
+  if len(direction) == 12:
+    lcd.triangle(direction[6], direction[7], direction[8], direction[9], direction[10], direction[11], fillcolor=arrowColor, color=arrowColor)
+  lcd.circle(direction[0], direction[1], 4, fillcolor=arrowColor, color=arrowColor)
 
 def printChart():
   global response
 
+  #background
   lcd.fillRect(0, 0, 240, 50, lcd.ORANGE)
   lcd.fillRect(0, 50, 240, 101, lcd.LIGHTGREY)
   lcd.fillRect(0, 101, 240, 136, lcd.RED)
 
-  diameter=4
-  points=10
-  space=(int)(240/(points-1))
-
+  #hour lines
+  tm = utime.localtime(utime.time())
+  
+  x=120+(tm[4]*2)
+  lcd.line(x, 0, x, 136, color=lcd.BLACK)
+  x=(tm[4]*2)
+  lcd.line(x, 0, x, 136, color=lcd.BLACK)
+  
+  #sgv values
   prevx=-1
   prevy=-1
 
   for idv, entry in enumerate(response):
-    x=(int)(diameter+(points-idv-1)*space)
+    the_date = getDateTuple(entry["date"])
+    hourDiff = tm[3]-the_date[3]
+    minutes = the_date[4]
+    x=240-(hourDiff*120)-(60-minutes)*2
     y=(int)(136-entry["sgv"]/2)
-    #print(str(x) + " " + str(y))
     lcd.circle(x, y, 4, fillcolor=lcd.BLACK, color=lcd.BLACK)
     if prevx>-1 and prevy>-1:
       lcd.line(prevx, prevy, x, y, color=lcd.BLACK)
     prevx=x
     prevy=y  
-
 
 def printScreen():
   global response, mode, brightness, emergency, emergencyPause, MIN, MAX, EMERGENCY_MIN, EMERGENCY_MAX, currentBackgroudColor
@@ -190,7 +200,7 @@ def printScreen():
     else:
       arrowColor = backgroundColor  
     
-    drawDirection(x, y, direction, arrowColor=arrowColor)
+    printDirection(x, y, direction, arrowColor=arrowColor)
 
     #sgv
     lcd.font(lcd.FONT_DejaVu56, rotate=0)
@@ -226,7 +236,7 @@ def printScreen():
     else:
       arrowColor = backgroundColor  
     
-    drawDirection(x, y, direction, arrowColor=arrowColor)
+    printDirection(x, y, direction, arrowColor=arrowColor)
 
     #sgv
     lcd.font(lcd.FONT_DejaVu56, rotate=180)
@@ -377,7 +387,7 @@ printCenteredText("Setting time...", backgroundColor=lcd.DARKGREY) #lcd.GREENYEL
 
 try: 
   rtc = machine.RTC()
-  tm = utime.localtime(currentTime())
+  tm = utime.localtime(getNtpTime())
   rtc.datetime((tm[0], tm[1], tm[2], tm[6] + 1, tm[3], tm[4], tm[5], 0))
   print("Current time " +  str(rtc.datetime()))
   startTime = utime.time()
