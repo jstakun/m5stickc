@@ -2,12 +2,12 @@
     "wifi": {"ssid1":"passwd1","ssid2":"passwd2"}, //REQUIRED you can enter here multiple wifi
     "api-endpoint": "your-nightscout-api-endpoint", //REQUIRED
     "api-token": "your-nightscout-api-endpoint", //REQUIRED
-    "interval": 60, //nightscout api query interval
-    "min": 75, //lowest safe glucose level > emergencyMin
-    "max": 180, //highest safe glucose level < emergencyMax
-    "emergencyMin": 50, //emergency low glucose level which will trigger beeper and blinking led
-    "emergencyMax": 250, //emergency high glucose level which will trigger beeper and blinking led
-    //this is only relevant if you use my managed Nightscout server as backend
+    "interval": 60, //Nightscout api query interval in seconds, accepted value 30 or more
+    "min": 75, //lowest safe glucose level > emergencyMin, accepted value 30 or more 
+    "max": 180, //highest safe glucose level < emergencyMax, accepted value 100 or more 
+    "emergencyMin": 50, //emergency low glucose level which will trigger beeper and blinking led, accepted value 30 or more
+    "emergencyMax": 250, //emergency high glucose level which will trigger beeper and blinking led, accepted value 100 or more
+    //below entries are only relevant if you use my managed Nightscout server as backend
     "locale": "en-US", //locale for printing elapsed time
     "timezone": "GMT+1" //time zone of gcm device in format GMT+/-Hours 
 }

@@ -369,9 +369,15 @@ EMERGENCY_MIN = config["emergencyMin"]
 EMERGENCY_MAX = config["emergencyMax"] 
 TIMEZONE = config["timezone"]
 
+if INTERVAL<30: INTERVAL=30
+if MIN<30: MIN=30
+if MAX<100: MAX=100
+if EMERGENCY_MIN<30 or MIN<=EMERGENCY_MIN: EMERGENCY_MIN=MIN-10
+if EMERGENCY_MAX<100 or MAX>=EMERGENCY_MAX: EMERGENCY_MAX=MAX+10  
+
 MODES = ["full_elapsed", "full_date", "full_battery", "basic", "flip_full_elapsed", "flip_full_date", "flip_full_battery", "chart"]
 mode = 0
-response = {}
+response = '{}'
 brightness = 32
 emergency = False
 emergencyPause = 0
