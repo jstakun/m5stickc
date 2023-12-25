@@ -1,7 +1,7 @@
 {
-    "wifi": {"ssid1":"passwd1","ssid2":"passwd2"}, //you can enter here multiple wifi
-    "api-endpoint": "your-nightscout-api-endpoint",
-    "api-token": "your-nightscout-api-endpoint",
+    "wifi": {"ssid1":"passwd1","ssid2":"passwd2"}, //REQUIRED you can enter here multiple wifi
+    "api-endpoint": "your-nightscout-api-endpoint", //REQUIRED
+    "api-token": "your-nightscout-api-endpoint", //REQUIRED
     "interval": 60, //nightscout api query interval
     "min": 75, //lowest safe glucose level > emergencyMin
     "max": 180, //highest safe glucose level < emergencyMax
