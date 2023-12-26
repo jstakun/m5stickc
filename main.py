@@ -355,26 +355,6 @@ macaddr='{:02x}:{:02x}:{:02x}:{:02x}:{:02x}:{:02x}'.format(*macaddr)
 print('MAC Adddress: ' + macaddr)
 print('Free memory: ' + str(gc.mem_free()) + ' bytes')
 
-confFile = open('config.json', 'r')
-config = ujson.loads(confFile.read())
-
-WIFI = config["wifi"]
-API_ENDPOINT = config["api-endpoint"]
-API_TOKEN = config["api-token"]
-LOCALE = config["locale"]
-INTERVAL = config["interval"]
-MIN = config["min"]
-MAX = config["max"]
-EMERGENCY_MIN = config["emergencyMin"]
-EMERGENCY_MAX = config["emergencyMax"] 
-TIMEZONE = config["timezone"]
-
-if INTERVAL<30: INTERVAL=30
-if MIN<30: MIN=30
-if MAX<100: MAX=100
-if EMERGENCY_MIN<30 or MIN<=EMERGENCY_MIN: EMERGENCY_MIN=MIN-10
-if EMERGENCY_MAX<100 or MAX>=EMERGENCY_MAX: EMERGENCY_MAX=MAX+10  
-
 MODES = ["full_elapsed", "full_date", "full_battery", "basic", "flip_full_elapsed", "flip_full_date", "flip_full_battery", "chart"]
 mode = 0
 response = '{}'
@@ -384,12 +364,43 @@ emergencyPause = 0
 currentBackgroudColor = -1
 sgvDict = {}
 
-beeper = PWM(Pin(2), freq=1000, duty=50)
-beeper.pause()
-
 axp.setLcdBrightness(brightness)
-lcd.orient(lcd.LANDSCAPE)
-lcd.clear(lcd.DARKGREY)
+
+try:
+  confFile = open('config.json', 'r')
+  config = ujson.loads(confFile.read())
+
+  WIFI = config["wifi"]
+  API_ENDPOINT = config["api-endpoint"]
+  API_TOKEN = config["api-token"]
+  LOCALE = config["locale"]
+  INTERVAL = config["interval"]
+  MIN = config["min"]
+  MAX = config["max"]
+  EMERGENCY_MIN = config["emergencyMin"]
+  EMERGENCY_MAX = config["emergencyMax"] 
+  TIMEZONE = config["timezone"]
+
+  if INTERVAL<30: INTERVAL=30
+  if MIN<30: MIN=30
+  if MAX<100: MAX=100
+  if EMERGENCY_MIN<30 or MIN<=EMERGENCY_MIN: EMERGENCY_MIN=MIN-10
+  if EMERGENCY_MAX<100 or MAX>=EMERGENCY_MAX: EMERGENCY_MAX=MAX+10  
+  if len(API_ENDPOINT)==0: raise Exception("Empty api-endpoint parameter")
+  if len(WIFI)==0: raise Exception("Empty wifi parameter")
+
+  beeper = PWM(Pin(2), freq=1000, duty=50)
+  beeper.pause()
+
+  lcd.orient(lcd.LANDSCAPE)
+  lcd.clear(lcd.DARKGREY)
+except Exception as e:
+  sys.print_exception(e)
+  while True:
+    printCenteredText("Fix config.json!", backgroundColor=lcd.RED, clear=True)
+    time.sleep(2)
+    printCenteredText("Restart required!", backgroundColor=lcd.RED, clear=True)
+    time.sleep(2)
 
 nic = network.WLAN(network.STA_IF)
 nic.active(True)
@@ -405,7 +416,7 @@ while not found:
       if ssid in WIFI: found = True; SSID=ssid; WIFI_PASSWORD=WIFI[ssid]; break
   except Exception as e:
       sys.print_exception(e)
-      printCenteredText("Saved wifi not found!", backgroundColor=lcd.RED, clear=True)  
+      printCenteredText("Wifi not found!", backgroundColor=lcd.RED, clear=True)  
   if not found: time.sleep(1)
 
 printCenteredText("Connecting wifi...", backgroundColor=lcd.DARKGREY) #lcd.OLIVE)
