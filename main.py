@@ -105,9 +105,9 @@ def printChart():
   global sgvDict
 
   #background
-  lcd.fillRect(0, 0, 240, 50, lcd.ORANGE)
+  lcd.fillRect(0, 0, 240, 50, lcd.ORANGE) #172
   lcd.fillRect(0, 50, 240, 101, lcd.LIGHTGREY)
-  lcd.fillRect(0, 101, 240, 136, lcd.RED)
+  lcd.fillRect(0, 101, 240, 136, lcd.RED) #70
   lcd.line(0, 50, 240, 50, color=lcd.BLACK)
   lcd.line(0, 101, 240, 101, color=lcd.BLACK)
   
@@ -133,7 +133,10 @@ def printChart():
     x=240-(hourDiff*120)-(tm[4]*2)+(minutes*2)
     y=(int)(136-sgvDict[key]/2)
     #print(str(hourDiff) + " " + str(tm[4]) + " " + str(x) + "," + str(y))
-    lcd.circle(x, y, 4, fillcolor=lcd.BLACK, color=lcd.BLACK)
+    fillcolor=lcd.BLACK
+    if sgvDict[key]<=70: fillcolor=lcd.LIGHTGREY
+    elif sgvDict[key]>=170: fillcolor=lcd.LIGHTGREY 
+    lcd.circle(x, y, 4, fillcolor=fillcolor, color=lcd.BLACK) 
     if prevx>-1 and prevy>-1 and (prevx-x)<=60:
       lcd.line(prevx, prevy, x, y, color=lcd.BLACK)
     prevx=x
