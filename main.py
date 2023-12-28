@@ -76,6 +76,25 @@ def getBatteryLevel():
   if volt < 4.20: return 100
   if volt >= 4.20: return 101
 
+def saveSgvFile(sgvdict):
+  sgvfile = open('sgvdict.txt', 'w')
+  for key in sgvdict:
+    sgvfile.write(str(key) + ':' + str(sgvdict[key]) + '\n')
+  sgvfile.close()  
+
+def readSgvFile():
+  d = OrderedDict()
+  try: 
+    sgvfile = open('sgvdict.txt', 'r')
+    entries = sgvfile.read().split('\n')
+    for entry in entries:
+      if ":" in entry:
+        [s, v] = [int(i) for i in entry.split(':')]
+        d.update({s: v})
+  except Exception as e:
+    sys.print_exception(e)
+  return d  
+
 def printTime(seconds, prefix='', suffix=''):
   m, s = divmod(seconds, 60)
   h, m = divmod(m, 60)
@@ -102,14 +121,16 @@ def printDirection(x, y, direction, arrowColor, fillColor=lcd.WHITE):
   lcd.circle(direction[0], direction[1], 4, fillcolor=arrowColor, color=arrowColor)
 
 def printChart(zoom=1):
-  global sgvDict
+  global sgvDict, MIN, MAX
 
   #background
-  lcd.fillRect(0, 0, 240, 50, lcd.ORANGE) #172
-  lcd.fillRect(0, 50, 240, 101, lcd.LIGHTGREY)
-  lcd.fillRect(0, 101, 240, 136, lcd.RED) #70
-  lcd.line(0, 50, 240, 50, color=lcd.BLACK)
-  lcd.line(0, 101, 240, 101, color=lcd.BLACK)
+  maxy = (int)(136-(MAX/2))
+  miny = (int)(136-(MIN/2))
+  lcd.fillRect(0, 0, 240, maxy, lcd.ORANGE) #172
+  lcd.fillRect(0, maxy, 240, miny, lcd.LIGHTGREY)
+  lcd.fillRect(0, miny, 240, 136, lcd.RED) #70
+  lcd.line(0, maxy, 240, maxy, color=lcd.BLACK)
+  lcd.line(0, miny, 240, miny, color=lcd.BLACK)
   
   #hour lines
   tm = utime.localtime(utime.time())
@@ -128,12 +149,12 @@ def printChart(zoom=1):
     #print(str(the_date[3]) + ":" + str(the_date[4]))
     hourDiff = tm[3]+1-the_date[3]
     minutes = the_date[4]
-    x=240-(hourDiff*zoom*60)-(tm[4]*zoom)+(minutes*zoom)
-    y=(int)(136-sgvDict[key]/2)
+    x = 240-(hourDiff*zoom*60)-(tm[4]*zoom)+(minutes*zoom)
+    y = (int)(136-sgvDict[key]/2)
     #print(str(hourDiff) + " " + str(tm[4]) + " " + str(x) + "," + str(y))
     fillcolor=lcd.BLACK
-    if sgvDict[key]<=70: fillcolor=lcd.LIGHTGREY
-    elif sgvDict[key]>=170: fillcolor=lcd.LIGHTGREY 
+    if sgvDict[key]<=MIN: fillcolor=lcd.LIGHTGREY
+    elif sgvDict[key]>=MAX: fillcolor=lcd.LIGHTGREY 
     lcd.circle(x, y, zoom+2, fillcolor=fillcolor, color=lcd.BLACK) 
     if prevx>-1 and prevy>-1 and (prevx-x)<=60:
       lcd.line(prevx, prevy, x, y, color=lcd.BLACK)
@@ -307,15 +328,16 @@ def backendMonitor():
         seconds = utime.mktime(the_date)
         d.update({seconds: entry['sgv']})
 
-      dictLen = 0  
+      dictLen = len(d)  
       for key in sgvDict:
-        dictLen = len(d)
-        if key < seconds and dictLen < 30:
+        if key < seconds and dictLen < 50:
           d.update({key: sgvDict[key]})
-        elif dictLen >= 30:
+        elif dictLen >= 50:
           break  
+        dictLen = len(d)
 
       sgvDict = d
+      saveSgvFile(d)
       print('Cached ' + str(dictLen) + " sgv entries")
       #print(sgvDict)  
       
@@ -327,6 +349,7 @@ def backendMonitor():
       print('Battery level: ' + str(getBatteryLevel()) + '%')
       print('Network error. Retry in ' + str(retry) + ' sec...')
       time.sleep(retry)
+
 def emergencyMonitor():
   global emergency, beeper, response
   while True:
@@ -363,7 +386,6 @@ brightness = 32
 emergency = False
 emergencyPause = 0
 currentBackgroudColor = -1
-sgvDict = {}
 
 axp.setLcdBrightness(brightness)
 
@@ -439,6 +461,10 @@ try:
 
   printCenteredText("Loading data...", backgroundColor=lcd.DARKGREY) #lcd.DARKGREEN)
 
+  sgvDict = readSgvFile()
+  dictLen = len(sgvDict)
+  print('Loaded ' + str(dictLen) + " sgv entries")
+
   _thread.start_new_thread(backendMonitor, ())
   _thread.start_new_thread(emergencyMonitor, ())
 
@@ -447,4 +473,3 @@ try:
 except Exception as e:
   sys.print_exception(e)
   printCenteredText("Restart required!", backgroundColor=lcd.RED, clear=True)
-  
