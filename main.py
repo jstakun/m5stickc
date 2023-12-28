@@ -101,7 +101,7 @@ def printDirection(x, y, direction, arrowColor, fillColor=lcd.WHITE):
     lcd.triangle(direction[6], direction[7], direction[8], direction[9], direction[10], direction[11], fillcolor=arrowColor, color=arrowColor)
   lcd.circle(direction[0], direction[1], 4, fillcolor=arrowColor, color=arrowColor)
 
-def printChart():
+def printChart(zoom=1):
   global sgvDict
 
   #background
@@ -114,12 +114,10 @@ def printChart():
   #hour lines
   tm = utime.localtime(utime.time())
   
-  x=240-(tm[4]*2)
-  lcd.line(x, 0, x, 136, color=lcd.BLACK)
-  x-=120
-  lcd.line(x, 0, x, 136, color=lcd.BLACK)
-  x-=120
-  lcd.line(x, 0, x, 136, color=lcd.BLACK)
+  x=240-(tm[4]*zoom)
+  while x>=0:
+    lcd.line(x, 0, x, 136, color=lcd.BLACK)
+    x-=(60*zoom)
   
   #sgv values
   prevx=-1
@@ -130,13 +128,13 @@ def printChart():
     #print(str(the_date[3]) + ":" + str(the_date[4]))
     hourDiff = tm[3]+1-the_date[3]
     minutes = the_date[4]
-    x=240-(hourDiff*120)-(tm[4]*2)+(minutes*2)
+    x=240-(hourDiff*zoom*60)-(tm[4]*zoom)+(minutes*zoom)
     y=(int)(136-sgvDict[key]/2)
     #print(str(hourDiff) + " " + str(tm[4]) + " " + str(x) + "," + str(y))
     fillcolor=lcd.BLACK
     if sgvDict[key]<=70: fillcolor=lcd.LIGHTGREY
     elif sgvDict[key]>=170: fillcolor=lcd.LIGHTGREY 
-    lcd.circle(x, y, 4, fillcolor=fillcolor, color=lcd.BLACK) 
+    lcd.circle(x, y, zoom+2, fillcolor=fillcolor, color=lcd.BLACK) 
     if prevx>-1 and prevy>-1 and (prevx-x)<=60:
       lcd.line(prevx, prevy, x, y, color=lcd.BLACK)
     prevx=x
