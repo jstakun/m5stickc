@@ -5,12 +5,14 @@ import ujson
 import sys
 import _thread
 import utime
-from machine import Pin, PWM
+import machine 
 import usocket as socket
 import ustruct as struct
 import gc
 import deviceCfg
 import wifiCfg
+import ubinascii
+from machine import Pin, PWM
 from collections import OrderedDict
 
 def getNtpTime():
@@ -94,6 +96,13 @@ def readSgvFile():
   except Exception as e:
     sys.print_exception(e)
   return d  
+
+def resetMachine(seconds=5):
+  if seconds<1: seconds=1
+  for i in range(seconds, 0, -1):
+     printCenteredText('Reset in ' + str(i) + ' sec', backgroundColor=lcd.RED, clear=True)
+     time.sleep(1)
+  machine.reset()    
 
 def printTime(seconds, prefix='', suffix=''):
   m, s = divmod(seconds, 60)
@@ -373,11 +382,13 @@ def emergencyMonitor():
 ########################################    
 
 print('Starting...')
-print("APIKEY: " + deviceCfg.get_apikey())
+print('APIKEY: ' + deviceCfg.get_apikey())
 macaddr=wifiCfg.wlan_sta.config('mac')
 macaddr='{:02x}:{:02x}:{:02x}:{:02x}:{:02x}:{:02x}'.format(*macaddr)
 print('MAC Adddress: ' + macaddr)
 print('Free memory: ' + str(gc.mem_free()) + ' bytes')
+machine_id = binascii.hexlify(machine.unique_id())
+print('Machine unique id: ' + machine_id.decode())
 
 MODES = ["full_elapsed", "full_date", "full_battery", "basic", "flip_full_elapsed", "flip_full_date", "flip_full_battery", "chart"]
 mode = 0
@@ -388,6 +399,7 @@ emergencyPause = 0
 currentBackgroudColor = -1
 
 axp.setLcdBrightness(brightness)
+lcd.orient(lcd.LANDSCAPE)
 
 try:
   confFile = open('config.json', 'r')
@@ -415,7 +427,6 @@ try:
   beeper = PWM(Pin(2), freq=1000, duty=50)
   beeper.pause()
 
-  lcd.orient(lcd.LANDSCAPE)
   lcd.clear(lcd.DARKGREY)
 except Exception as e:
   sys.print_exception(e)
@@ -473,3 +484,5 @@ try:
 except Exception as e:
   sys.print_exception(e)
   printCenteredText("Restart required!", backgroundColor=lcd.RED, clear=True)
+  time.sleep(1)
+  resetMachine()
