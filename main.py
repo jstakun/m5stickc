@@ -231,13 +231,12 @@ def printScreen():
     
     direction = directions[directionStr] 
     
-    if not tooOld and (directionStr == 'DoubleDown' or directionStr == 'DoubleUp'): 
-      arrowColor = lcd.RED
-    elif not tooOld and (directionStr == 'SingleUp' or directionStr == 'SingleDown'):
-      arrowColor = lcd.ORANGE
-    else:
-      arrowColor = backgroundColor  
-    
+    if not tooOld and directionStr == 'DoubleUp' and sgv+20>=MAX: arrowColor = lcd.RED
+    elif not tooOld and directionStr == 'DoubleDown' and sgv-20<=MIN: arrowColor = lcd.RED
+    elif not tooOld and directionStr == 'SingleUp' and sgv+10>=MAX: arrowColor = lcd.ORANGE
+    elif not tooOld and directionStr == 'SingleDown' and sgv-10<=MIN: arrowColor = lcd.ORANGE
+    else: arrowColor = backgroundColor  
+        
     printDirection(x, y, direction, arrowColor=arrowColor)
 
     #sgv
