@@ -251,7 +251,7 @@ def printScreen():
     lcd.fillRect(0, 100, 240, 100+f[1], backgroundColor)
     lcd.print(dateStr, (int)((240-lcd.textWidth(dateStr))/2), 100)
   elif mode in range(4,7):
-    #flip mode
+    #flip full mode
 
     #direction
     x=58
@@ -267,12 +267,11 @@ def printScreen():
     
     direction = directions[directionStr] 
     
-    if not tooOld and (directionStr == 'DoubleDown' or directionStr == 'DoubleUp'): 
-      arrowColor = lcd.RED
-    elif not tooOld and (directionStr == 'SingleUp' or directionStr == 'SingleDown'):
-      arrowColor = lcd.ORANGE
-    else:
-      arrowColor = backgroundColor  
+    if not tooOld and directionStr == 'DoubleUp' and sgv+20>=MAX: arrowColor = lcd.RED
+    elif not tooOld and directionStr == 'DoubleDown' and sgv-20<=MIN: arrowColor = lcd.RED
+    elif not tooOld and directionStr == 'SingleUp' and sgv+10>=MAX: arrowColor = lcd.ORANGE
+    elif not tooOld and directionStr == 'SingleDown' and sgv-10<=MIN: arrowColor = lcd.ORANGE
+    else: arrowColor = backgroundColor   
     
     printDirection(x, y, direction, arrowColor=arrowColor)
 
