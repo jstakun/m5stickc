@@ -1,9 +1,10 @@
 # Glucose level monitor for M5Stack M5StickC Plus device
 
-<img width="240" src="https://raw.githubusercontent.com/jstakun/m5stickc/master/images/img1.jpg">&nbsp;&nbsp;
-<img width="240" src="https://raw.githubusercontent.com/jstakun/m5stickc/master/images/img2.jpg">&nbsp;&nbsp;
-<img width="240" src="https://raw.githubusercontent.com/jstakun/m5stickc/master/images/img3.jpg">&nbsp;&nbsp;
-<img width="240" src="https://raw.githubusercontent.com/jstakun/m5stickc/master/images/img4.jpg">
+<img width="240" height="120" src="https://raw.githubusercontent.com/jstakun/m5stickc/master/images/img1.jpg">&nbsp;&nbsp;
+<img width="240" height="120" src="https://raw.githubusercontent.com/jstakun/m5stickc/master/images/img2.jpg">
+<br/>
+<img width="240" height="120" src="https://raw.githubusercontent.com/jstakun/m5stickc/master/images/img3.jpg">&nbsp;&nbsp;
+<img width="240" height="120" src="https://raw.githubusercontent.com/jstakun/m5stickc/master/images/img4.jpg">
 
 With this application you can visualize glucose level stored in Nightscout cloud database on M5StickC Plus device.
 
