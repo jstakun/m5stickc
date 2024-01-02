@@ -1,6 +1,13 @@
 config.json
 test.py
-*.jpg
 draw.py
 screenlog.*
 chart.py
+images/dd.jpg
+images/double-down.jpg
+images/du.jpg
+images/f.jpg
+images/ffd.jpg
+images/ffu.jpg
+images/sd.jpg
+images/su.jpg
