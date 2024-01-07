@@ -358,7 +358,7 @@ def backendMonitor():
       time.sleep(retry)
 
 def emergencyMonitor():
-  global emergency, beeper, response
+  global emergency, beeper, response, USE_BEEPER
   while True:
     batteryLevel = getBatteryLevel();
     if emergency == True or (batteryLevel < 20 and batteryLevel > 0):
@@ -366,15 +366,18 @@ def emergencyMonitor():
         print('Emergency glucose level ' + str(response[0]['sgv']) + '!!!')
       elif batteryLevel < 20:
         print('Low battery level ' + str(batteryLevel) + "%!!!")
-      beeper.resume()
+      if USE_BEEPER == 1:
+        beeper.resume()
       M5Led.on()
       time.sleep(0.5)
-      beeper.pause()
+      if USE_BEEPER == 1:
+        beeper.pause()
       M5Led.off()
       time.sleep(0.5)
     else:
       #print('No emergency')
-      beeper.pause()
+      if USE_BEEPER == 1:
+        beeper.pause()
       time.sleep(1)
 
 ########################################    
@@ -413,6 +416,7 @@ try:
   EMERGENCY_MIN = config["emergencyMin"]
   EMERGENCY_MAX = config["emergencyMax"] 
   TIMEZONE = config["timezone"]
+  USE_BEEPER = config["beeper"]
 
   if INTERVAL<30: INTERVAL=30
   if MIN<30: MIN=30
@@ -421,6 +425,7 @@ try:
   if EMERGENCY_MAX<100 or MAX>=EMERGENCY_MAX: EMERGENCY_MAX=MAX+10  
   if len(API_ENDPOINT)==0: raise Exception("Empty api-endpoint parameter")
   if len(WIFI)==0: raise Exception("Empty wifi parameter")
+  if USE_BEEPER > 1 or USE_BEEPER < 0: USE_BEEPER=1
 
   beeper = PWM(Pin(2), freq=1000, duty=50)
   beeper.pause()

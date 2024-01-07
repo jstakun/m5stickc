@@ -3,11 +3,12 @@
     "api-endpoint": "your-nightscout-api-endpoint", //REQUIRED
     "api-token": "your-nightscout-api-endpoint", //REQUIRED
     "interval": 60, //Nightscout api query interval in seconds, accepted value 30 or more
+    "beeper": 1, //in case of emergency use beeper, accepted values are 1 or 0
     "min": 75, //lowest safe glucose level > emergencyMin, accepted value 30 or more 
     "max": 180, //highest safe glucose level < emergencyMax, accepted value 100 or more 
     "emergencyMin": 50, //emergency low glucose level which will trigger beeper and blinking led, accepted value 30 or more
     "emergencyMax": 250, //emergency high glucose level which will trigger beeper and blinking led, accepted value 100 or more
     //below entries are only relevant if you use my managed Nightscout server as backend
-    "locale": "en-US", //locale for printing elapsed time
-    "timezone": "GMT+1" //time zone of gcm device in format GMT+/-Hours 
+    "locale": "en-US", //locale for printing elapsed time information on the screen
+    "timezone": "GMT+1" //time zone of gcm device in GMT+/-Hours format
 }
