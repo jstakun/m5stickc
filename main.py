@@ -358,10 +358,11 @@ def backendMonitor():
       time.sleep(retry)
 
 def emergencyMonitor():
-  global emergency, beeper, response, USE_BEEPER
+  global emergency, beeper, response, USE_BEEPER, startTime
   while True:
-    batteryLevel = getBatteryLevel();
-    if emergency == True or (batteryLevel < 20 and batteryLevel > 0):
+    batteryLevel = getBatteryLevel()
+    uptime = utime.time() - startTime
+    if emergency == True or (batteryLevel < 20 and batteryLevel > 0 and uptime > 300):
       if emergency == True:
         print('Emergency glucose level ' + str(response[0]['sgv']) + '!!!')
       elif batteryLevel < 20:
