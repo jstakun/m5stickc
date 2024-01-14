@@ -14,6 +14,7 @@ import wifiCfg
 import ubinascii
 from machine import Pin, PWM
 from collections import OrderedDict
+from imu import IMU
 
 def getNtpTime():
   NTP_QUERY = bytearray(48)
@@ -109,7 +110,11 @@ def printTime(seconds, prefix='', suffix=''):
   h, m = divmod(m, 60)
   print(prefix + ' {:02d}:{:02d}:{:02d} '.format(h, m, s) + suffix)  
 
-def printCenteredText(msg, font=lcd.FONT_DejaVu24, rotateAngle=0, backgroundColor=lcd.BLACK, textColor=lcd.WHITE, clear=False):
+def printCenteredText(msg, font=lcd.FONT_DejaVu24, backgroundColor=lcd.BLACK, textColor=lcd.WHITE, clear=False):
+  global mpu6050
+  rotateAngle = 0
+  if mpu6050.acceleration[0] > 0: rotateAngle = 180
+  
   lcd.font(font, rotate=rotateAngle)
   if clear == True:
      lcd.clear(backgroundColor)
@@ -130,6 +135,7 @@ def printDirection(x, y, direction, arrowColor, fillColor=lcd.WHITE):
   lcd.circle(direction[0], direction[1], 4, fillcolor=arrowColor, color=arrowColor)
 
 def printChart(zoom=1):
+  #TODO draw chart in flip mode
   global sgvDict, MIN, MAX
 
   #background
@@ -170,7 +176,7 @@ def printChart(zoom=1):
     prevx=x
     prevy=y  
 
-def printScreen():
+def printScreen(clear=False):
   global response, mode, brightness, emergency, emergencyPause, MIN, MAX, EMERGENCY_MIN, EMERGENCY_MAX, currentBackgroudColor
   
   newest = response[0]
@@ -186,7 +192,8 @@ def printScreen():
   except Exception as e:
     sys.print_exception(e)
 
-  if not tooOld and "ago" in newest and (mode == 0 or mode == 4): 
+  #if not tooOld and "ago" in newest and (mode == 0 or mode == 4): 
+  if "ago" in newest and (mode == 0 or mode == 4): 
     dateStr = newest['ago']
   elif mode == 2 or mode == 6:
     dateStr = "Battery: " + str(getBatteryLevel()) + "%"
@@ -208,7 +215,7 @@ def printScreen():
   lcd.setTextColor(lcd.WHITE)
 
   #in skip background clearing if color doesn't change  
-  if (currentBackgroudColor != backgroundColor):
+  if clear or currentBackgroudColor != backgroundColor:
      lcd.clear(backgroundColor)
      currentBackgroudColor = backgroundColor
   else:
@@ -300,6 +307,8 @@ def onBtnAPressed():
     emergencyPause = utime.time() + 1800 #30 mins
   else:   
     if mode == (len(MODES)-1): mode = 0
+    elif mpu6050.acceleration[0] > 0 and mode == 6: mode = 3 #keep this until chart can be printed in flip mode
+    elif mpu6050.acceleration[0] < 0 and mode == 3: mode = 7 #keep this until chart can be printed in flip mode
     else: mode += 1 
     currentBackgroudColor = -1
     print('Selected mode ' + MODES[mode])
@@ -313,7 +322,7 @@ def onBtnBPressed():
   else:   
     global brightness
     brightness += 16
-    if brightness > 96: brightness = 16
+    if brightness > 96: brightness = 32
     axp.setLcdBrightness(brightness)
 
 def backendMonitor():
@@ -381,6 +390,15 @@ def emergencyMonitor():
         beeper.pause()
       time.sleep(1)
 
+def mpu6050Monitor():
+  global mpu6050, mode, response
+  while True:
+    acceleration = mpu6050.acceleration
+    hasResponse = (response != '{}')
+    if hasResponse and acceleration[0] > 0 and mode in range(0,3): mode += 4; printScreen(clear=True) #change to 'Flip mode' #4,5,6
+    elif hasResponse and acceleration[0] < 0 and mode in range(4,7): mode -= 4; printScreen(clear=True) #change to 'Normal mode' #0,1,2
+    time.sleep(0.5)
+        
 ########################################    
 
 print('Starting...')
@@ -430,6 +448,9 @@ try:
 
   beeper = PWM(Pin(2), freq=1000, duty=50)
   beeper.pause()
+
+  mpu6050 = IMU()
+  if mpu6050.acceleration[0] > 0: mode = 4 #flip
 
   lcd.clear(lcd.DARKGREY)
 except Exception as e:
@@ -482,6 +503,7 @@ try:
 
   _thread.start_new_thread(backendMonitor, ())
   _thread.start_new_thread(emergencyMonitor, ())
+  _thread.start_new_thread(mpu6050Monitor, ())
 
   btnA.wasPressed(onBtnAPressed)
   btnB.wasPressed(onBtnBPressed)
