@@ -137,25 +137,38 @@ def printDirection(x, y, direction, arrowColor, fillColor=lcd.WHITE):
   lcd.circle(direction[0], direction[1], 4, fillcolor=arrowColor, color=arrowColor)
 
 def printChart(zoom=1):
-  #TODO draw chart in flip mode
-  global sgvDict, MIN, MAX
+  global sgvDict, MIN, MAX, mode
 
   #background
-  maxy = (int)(136-(MAX/2))
-  miny = (int)(136-(MIN/2))
-  lcd.fillRect(0, 0, 240, maxy, lcd.ORANGE) #172
-  lcd.fillRect(0, maxy, 240, miny, lcd.LIGHTGREY)
-  lcd.fillRect(0, miny, 240, 136, lcd.RED) #70
-  lcd.line(0, maxy, 240, maxy, color=lcd.BLACK)
-  lcd.line(0, miny, 240, miny, color=lcd.BLACK)
+  if mode == 8:
+    maxy = 136-(int)(136-(MAX/2))
+    miny = 136-(int)(136-(MIN/2))
+    lcd.fillRect(0, 0, 240, miny, lcd.RED) #70
+    lcd.fillRect(0, miny, 240, maxy, lcd.LIGHTGREY)
+    lcd.fillRect(0, maxy, 240, 136, lcd.ORANGE) #172
+    lcd.line(0, maxy, 240, maxy, color=lcd.BLACK)
+    lcd.line(0, miny, 240, miny, color=lcd.BLACK)
+  else:   
+    maxy = (int)(136-(MAX/2))
+    miny = (int)(136-(MIN/2))
+    lcd.fillRect(0, 0, 240, maxy, lcd.ORANGE) #172
+    lcd.fillRect(0, maxy, 240, miny, lcd.LIGHTGREY)
+    lcd.fillRect(0, miny, 240, 136, lcd.RED) #70
+    lcd.line(0, maxy, 240, maxy, color=lcd.BLACK)
+    lcd.line(0, miny, 240, miny, color=lcd.BLACK)
   
-  #hour lines
+  #hour vertical lines
   tm = utime.localtime(utime.time())
-  
-  x=240-(tm[4]*zoom)
-  while x>=0:
-    lcd.line(x, 0, x, 136, color=lcd.BLACK)
-    x-=(60*zoom)
+  if mode == 8:
+    x=(tm[4]*zoom)
+    while x<=240:
+      lcd.line(x, 0, x, 136, color=lcd.BLACK)
+      x+=(60*zoom)
+  else:  
+    x=240-(tm[4]*zoom)
+    while x>=0:
+      lcd.line(x, 0, x, 136, color=lcd.BLACK)
+      x-=(60*zoom)
   
   #sgv values
   prevx=-1
@@ -163,18 +176,27 @@ def printChart(zoom=1):
 
   for key in sgvDict:
     the_date = utime.localtime(key)
-    #print(str(the_date[3]) + ":" + str(the_date[4]))
     hourDiff = tm[3]+1-the_date[3]
     minutes = the_date[4]
-    x = 240-(hourDiff*zoom*60)-(tm[4]*zoom)+(minutes*zoom)
-    y = (int)(136-sgvDict[key]/2)
-    #print(str(hourDiff) + " " + str(tm[4]) + " " + str(x) + "," + str(y))
-    fillcolor=lcd.BLACK
-    if sgvDict[key]<=MIN: fillcolor=lcd.LIGHTGREY
-    elif sgvDict[key]>=MAX: fillcolor=lcd.LIGHTGREY 
-    lcd.circle(x, y, zoom+2, fillcolor=fillcolor, color=lcd.BLACK) 
-    if prevx>-1 and prevy>-1 and (prevx-x)<=60:
-      lcd.line(prevx, prevy, x, y, color=lcd.BLACK)
+    if mode == 8:
+      x = 240-(240-(hourDiff*zoom*60)-(tm[4]*zoom)+(minutes*zoom))
+      y = (int)(sgvDict[key]/2)
+      print(str(x) + ' ' + str(y))
+      fillcolor = lcd.BLACK
+      if sgvDict[key]<=MIN: fillcolor=lcd.LIGHTGREY
+      elif sgvDict[key]>=MAX: fillcolor=lcd.LIGHTGREY 
+      lcd.circle(x, y, zoom+2, fillcolor=fillcolor, color=lcd.BLACK) 
+      if prevx>-1 and prevy>-1 and (x-prevx)<=60:
+        lcd.line(prevx, prevy, x, y, color=lcd.BLACK) 
+    else:   
+      x = 240-(hourDiff*zoom*60)-(tm[4]*zoom)+(minutes*zoom)
+      y = (int)(136-sgvDict[key]/2)
+      fillcolor = lcd.BLACK
+      if sgvDict[key]<=MIN: fillcolor=lcd.LIGHTGREY
+      elif sgvDict[key]>=MAX: fillcolor=lcd.LIGHTGREY 
+      lcd.circle(x, y, zoom+2, fillcolor=fillcolor, color=lcd.BLACK) 
+      if prevx>-1 and prevy>-1 and (prevx-x)<=60:
+        lcd.line(prevx, prevy, x, y, color=lcd.BLACK)
     prevx=x
     prevy=y  
 
@@ -298,20 +320,21 @@ def printScreen(clear=False):
     y = 118
     lcd.fillRect(0, y-lcd.fontSize()[1], 240, y, backgroundColor)
     lcd.print(dateStr, x, y)
-  elif currentMode == 7:
+  elif currentMode in range(7,9):
     #chart
     printChart()
     currentBackgroudColor = -1
 
 def onBtnAPressed():
-  global mode, MODES, emergency, emergencyPause, currentBackgroudColor
+  global mode, MODES, emergency, emergencyPause, currentBackgroudColor, mpu6050
   if emergency == True:
     emergency = False
     emergencyPause = utime.time() + EMERGENCY_PAUSE_INTERVAL 
   else:   
-    if mode == (len(MODES)-1): mode = 0
-    elif mpu6050.acceleration[0] > 0 and mode == 6: mode = 3 #keep this until chart can be printed in flip mode
-    elif mpu6050.acceleration[0] < 0 and mode == 3: mode = 7 #keep this until chart can be printed in flip mode
+    if mode == 7 and mpu6050.acceleration[0] < 0: mode = 0
+    elif mode == 6 and mpu6050.acceleration[0] > 0: mode = 8
+    elif mode == 3 and mpu6050.acceleration[0] < 0: mode = 7
+    elif mode == 8: mode = 3
     else: mode += 1 
     currentBackgroudColor = -1
     print('Selected mode ' + MODES[mode])
@@ -400,6 +423,8 @@ def mpu6050Monitor():
     hasResponse = (response != '{}')
     if hasResponse and acceleration[0] > 0 and mode in range(0,3): mode += 4; printScreen(clear=True) #change to 'Flip mode' #4,5,6
     elif hasResponse and acceleration[0] < 0 and mode in range(4,7): mode -= 4; printScreen(clear=True) #change to 'Normal mode' #0,1,2
+    elif hasResponse and acceleration[0] > 0 and mode == 7: mode = 8; printScreen(clear=True)
+    elif hasResponse and acceleration[0] < 0 and mode == 8: mode = 7; printScreen(clear=True)
     time.sleep(0.5)
         
 ########################################    
@@ -413,7 +438,7 @@ print('Free memory: ' + str(gc.mem_free()) + ' bytes')
 machine_id = binascii.hexlify(machine.unique_id())
 print('Machine unique id: ' + machine_id.decode())
 
-MODES = ["full_elapsed", "full_date", "full_battery", "basic", "flip_full_elapsed", "flip_full_date", "flip_full_battery", "chart"]
+MODES = ["full_elapsed", "full_date", "full_battery", "basic", "flip_full_elapsed", "flip_full_date", "flip_full_battery", "chart", "flip_chart"]
 response = '{}'
 brightness = 32
 emergency = False
