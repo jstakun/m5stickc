@@ -16,6 +16,8 @@ from machine import Pin, PWM
 from collections import OrderedDict
 from imu import IMU
 
+EMERGENCY_PAUSE_INTERVAL = 1800  #sec = 30 mins
+
 def getNtpTime():
   NTP_QUERY = bytearray(48)
   NTP_QUERY[0] = 0x1B
@@ -201,16 +203,17 @@ def printScreen(clear=False):
     dateStr = newest['date'].replace("T", " ")[:-3] #remove seconds to fit screen
 
   if tooOld: backgroundColor=lcd.DARKGREY; M5Led.on(); emergency=False
-  elif sgv <= EMERGENCY_MIN: backgroundColor=lcd.RED; M5Led.on(); emergency=(utime.time() > emergencyPause)  
+  elif sgv <= EMERGENCY_MIN: backgroundColor=lcd.RED; M5Led.on(); emergency=(utime.time() > emergencyPause and not tooOld)  
   elif sgv >= (MIN-10) and sgv < MIN and directionStr.endswith("Up"): backgroundColor=lcd.DARKGREEN; emergency=False; M5Led.off()
   elif sgv > EMERGENCY_MIN and sgv <= MIN: backgroundColor=lcd.RED; M5Led.on(); emergency=False
   elif sgv > MIN and sgv <= MAX: backgroundColor=lcd.DARKGREEN; emergency=False; M5Led.off() 
   elif sgv > MAX and sgv <= (MAX+10) and directionStr.endswith("Down"): backgroundColor=lcd.DARKGREEN; emergency=False; M5Led.off()
   elif sgv > MAX and sgv <= EMERGENCY_MAX: backgroundColor=lcd.ORANGE; M5Led.on(); emergency=False
-  elif sgv > EMERGENCY_MAX: backgroundColor=lcd.ORANGE; M5Led.on(); emergency=(utime.time() > emergencyPause)  
+  elif sgv > EMERGENCY_MAX: backgroundColor=lcd.ORANGE; M5Led.on(); emergency=(utime.time() > emergencyPause and not tooOld)  
 
   #if emergency change to one of full modes 
-  if emergency==True and (mode==3 or mode==7) : mode=0
+  currentMode = mode
+  if emergency==True and (mode==3 or mode==7): currentMode = 0
 
   lcd.setTextColor(lcd.WHITE)
 
@@ -221,7 +224,7 @@ def printScreen(clear=False):
   else:
      print("Skipping background clearing")
   
-  if mode in range (0,3):  
+  if currentMode in range (0,3):  
     #full mode
     
     #direction
@@ -256,7 +259,7 @@ def printScreen(clear=False):
     f=lcd.fontSize()
     lcd.fillRect(0, 100, 240, 100+f[1], backgroundColor)
     lcd.print(dateStr, (int)((240-lcd.textWidth(dateStr))/2), 100)
-  elif mode in range(4,7):
+  elif currentMode in range(4,7):
     #flip full mode
 
     #direction
@@ -295,7 +298,7 @@ def printScreen(clear=False):
     y = 118
     lcd.fillRect(0, y-lcd.fontSize()[1], 240, y, backgroundColor)
     lcd.print(dateStr, x, y)
-  elif mode == 7:
+  elif currentMode == 7:
     #chart
     printChart()
     currentBackgroudColor = -1
@@ -304,7 +307,7 @@ def onBtnAPressed():
   global mode, MODES, emergency, emergencyPause, currentBackgroudColor
   if emergency == True:
     emergency = False
-    emergencyPause = utime.time() + 1800 #30 mins
+    emergencyPause = utime.time() + EMERGENCY_PAUSE_INTERVAL 
   else:   
     if mode == (len(MODES)-1): mode = 0
     elif mpu6050.acceleration[0] > 0 and mode == 6: mode = 3 #keep this until chart can be printed in flip mode
@@ -318,7 +321,7 @@ def onBtnBPressed():
   global emergency, emergencyPause
   if emergency == True:
     emergency = False
-    emergencyPause = utime.time() + 1800 #30 mins
+    emergencyPause = utime.time() + EMERGENCY_PAUSE_INTERVAL
   else:   
     global brightness
     brightness += 16
@@ -411,7 +414,6 @@ machine_id = binascii.hexlify(machine.unique_id())
 print('Machine unique id: ' + machine_id.decode())
 
 MODES = ["full_elapsed", "full_date", "full_battery", "basic", "flip_full_elapsed", "flip_full_date", "flip_full_battery", "chart"]
-mode = 0
 response = '{}'
 brightness = 32
 emergency = False
@@ -450,6 +452,7 @@ try:
   beeper.pause()
 
   mpu6050 = IMU()
+  mode = 0
   if mpu6050.acceleration[0] > 0: mode = 4 #flip
 
   lcd.clear(lcd.DARKGREY)
