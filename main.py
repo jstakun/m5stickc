@@ -139,7 +139,7 @@ def printDirection(x, y, direction, arrowColor, fillColor=lcd.WHITE):
 def printChart(zoom=1):
   global sgvDict, MIN, MAX, mode
 
-  #background and horizontal glucose level lines
+  #horizontal glucose level lines nand fills
   if mode == 8:
     maxy = 136-(int)(136-(MAX/2))
     miny = 136-(int)(136-(MIN/2))
@@ -157,7 +157,7 @@ def printChart(zoom=1):
     lcd.line(0, maxy, 240, maxy, color=lcd.BLACK)
     lcd.line(0, miny, 240, miny, color=lcd.BLACK)
   
-  #hour vertical lines
+  #hours vertical lines
   tm = utime.localtime(utime.time())
   if mode == 8:
     x=(tm[4]*zoom)
@@ -194,35 +194,6 @@ def printChart(zoom=1):
     if n>0 and abs(p[0]-points[n-1][0])<=60:
       lcd.line(p[0], p[1],points[n-1][0],points[n-1][1], color=lcd.BLACK) 
     n -= 1
-
-  #prevx=-1
-  #prevy=-1
-
-  #for key in sgvDict:
-  #  the_date = utime.localtime(key)
-  #  hourDiff = tm[3]+1-the_date[3]
-  #  minutes = the_date[4]
-  #  if mode == 8:
-  #    x = 240-(240-(hourDiff*zoom*60)-(tm[4]*zoom)+(minutes*zoom))
-  #    y = (int)(sgvDict[key]/2)
-  #    print(str(x) + ' ' + str(y))
-  #    fillcolor = lcd.BLACK
-  #    if sgvDict[key]<=MIN: fillcolor=lcd.LIGHTGREY
-  #    elif sgvDict[key]>=MAX: fillcolor=lcd.LIGHTGREY 
-  #    lcd.circle(x, y, zoom+2, fillcolor=fillcolor, color=lcd.BLACK) 
-  #    if prevx>-1 and prevy>-1 and (x-prevx)<=60:
-  #      lcd.line(prevx, prevy, x, y, color=lcd.BLACK) 
-  #  else:   
-  #    x = 240-(hourDiff*zoom*60)-(tm[4]*zoom)+(minutes*zoom)
-  #    y = (int)(136-sgvDict[key]/2)
-  #    fillcolor = lcd.BLACK
-  #    if sgvDict[key]<=MIN: fillcolor=lcd.LIGHTGREY
-  #    elif sgvDict[key]>=MAX: fillcolor=lcd.LIGHTGREY 
-  #    lcd.circle(x, y, zoom+2, fillcolor=fillcolor, color=lcd.BLACK) 
-  #    if prevx>-1 and prevy>-1 and (prevx-x)<=60:
-  #      lcd.line(prevx, prevy, x, y, color=lcd.BLACK)
-  #  prevx=x
-  #  prevy=y  
 
 def printScreen(clear=False):
   global response, mode, brightness, emergency, emergencyPause, MIN, MAX, EMERGENCY_MIN, EMERGENCY_MAX, currentBackgroudColor
