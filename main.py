@@ -138,19 +138,8 @@ def printDirection(x, y, direction, arrowColor, fillColor=lcd.WHITE):
   lcd.circle(direction[0], direction[1], 4, fillcolor=arrowColor, color=arrowColor)
 
 def printChart(zoom=1):
-  global sgvDict, MIN, MAX, mode, chartDrawing
+  global sgvDict, MIN, MAX
 
-  print('Printing chart in ' + MODES[mode] + ' mode')
-  waitTime = 0.0
-  while chartDrawing == True:
-    time.sleep(0.1)
-    waitTime += 0.1
-    print(".", end="")
-
-  if waitTime > 0: 
-    print('Ended in ' + str(waitTime) + ' seconds')
-  chartDrawing = True   
-  
   #horizontal glucose level lines nand fills
   if mode == 8:
     maxy = 136-(int)(136-(MAX/2))
@@ -207,11 +196,20 @@ def printChart(zoom=1):
       lcd.line(p[0], p[1],points[n-1][0],points[n-1][1], color=lcd.BLACK) 
     n -= 1
 
-  chartDrawing = False  
-
 def printScreen(clear=False):
-  global response, mode, brightness, emergency, emergencyPause, MIN, MAX, EMERGENCY_MIN, EMERGENCY_MAX, currentBackgroudColor
+  global response, mode, brightness, emergency, emergencyPause, MIN, MAX, EMERGENCY_MIN, EMERGENCY_MAX, currentBackgroudColor, screenDrawing
   
+  print('Printing screen in ' + MODES[mode] + ' mode')
+  waitTime = 0.0
+  while screenDrawing == True:
+    time.sleep(0.1)
+    waitTime += 0.1
+    print(".", end="")
+
+  if waitTime > 0: 
+    print('Finished in ' + str(waitTime) + ' seconds')
+  screenDrawing = True   
+
   newest = response[0]
   sgv = newest['sgv']
   sgvStr = str(newest['sgv'])
@@ -229,7 +227,11 @@ def printScreen(clear=False):
   if "ago" in newest and (mode == 0 or mode == 4): 
     dateStr = newest['ago']
   elif mode == 2 or mode == 6:
-    dateStr = "Battery: " + str(getBatteryLevel()) + "%"
+    batteryLevel = getBatteryLevel()
+    if batteryLevel >= 0:
+       dateStr = "Battery: " + str(getBatteryLevel()) + "%"
+    else: 
+       dateStr = "Battery level unknown"
   else:   
     dateStr = newest['date'].replace("T", " ")[:-3] #remove seconds to fit screen
 
@@ -333,6 +335,7 @@ def printScreen(clear=False):
     #chart
     printChart()
     currentBackgroudColor = -1
+  screenDrawing = False  
 
 def onBtnAPressed():
   global mode, emergency, emergencyPause, currentBackgroudColor, mpu6050
@@ -452,7 +455,7 @@ brightness = 32
 emergency = False
 emergencyPause = 0
 currentBackgroudColor = -1
-chartDrawing = False
+screenDrawing = False
 
 axp.setLcdBrightness(brightness)
 lcd.orient(lcd.LANDSCAPE)
@@ -529,7 +532,7 @@ try:
   rtc = machine.RTC()
   tm = utime.localtime(getNtpTime())
   rtc.datetime((tm[0], tm[1], tm[2], tm[6] + 1, tm[3], tm[4], tm[5], 0))
-  print("Current time " +  str(rtc.datetime()))
+  print("Current datetime " +  str(rtc.datetime()))
   startTime = utime.time()
 
   printCenteredText("Loading data...", backgroundColor=lcd.DARKGREY) #lcd.DARKGREEN)
