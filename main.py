@@ -17,6 +17,7 @@ from collections import OrderedDict
 from imu import IMU
 
 EMERGENCY_PAUSE_INTERVAL = 1800  #sec = 30 mins
+MODES = ["full_elapsed", "full_date", "full_battery", "basic", "flip_full_elapsed", "flip_full_date", "flip_full_battery", "chart", "flip_chart"]
 
 def getNtpTime():
   NTP_QUERY = bytearray(48)
@@ -137,8 +138,19 @@ def printDirection(x, y, direction, arrowColor, fillColor=lcd.WHITE):
   lcd.circle(direction[0], direction[1], 4, fillcolor=arrowColor, color=arrowColor)
 
 def printChart(zoom=1):
-  global sgvDict, MIN, MAX, mode
+  global sgvDict, MIN, MAX, mode, chartDrawing
 
+  print('Printing chart in ' + MODES[mode] + ' mode')
+  waitTime = 0.0
+  while chartDrawing == True:
+    time.sleep(0.1)
+    waitTime += 0.1
+    print(".", end="")
+
+  if waitTime > 0: 
+    print('Ended in ' + str(waitTime) + ' seconds')
+  chartDrawing = True   
+  
   #horizontal glucose level lines nand fills
   if mode == 8:
     maxy = 136-(int)(136-(MAX/2))
@@ -194,6 +206,8 @@ def printChart(zoom=1):
     if n>0 and abs(p[0]-points[n-1][0])<=60:
       lcd.line(p[0], p[1],points[n-1][0],points[n-1][1], color=lcd.BLACK) 
     n -= 1
+
+  chartDrawing = False  
 
 def printScreen(clear=False):
   global response, mode, brightness, emergency, emergencyPause, MIN, MAX, EMERGENCY_MIN, EMERGENCY_MAX, currentBackgroudColor
@@ -321,7 +335,7 @@ def printScreen(clear=False):
     currentBackgroudColor = -1
 
 def onBtnAPressed():
-  global mode, MODES, emergency, emergencyPause, currentBackgroudColor, mpu6050
+  global mode, emergency, emergencyPause, currentBackgroudColor, mpu6050
   if emergency == True:
     emergency = False
     emergencyPause = utime.time() + EMERGENCY_PAUSE_INTERVAL 
@@ -433,12 +447,12 @@ print('Free memory: ' + str(gc.mem_free()) + ' bytes')
 machine_id = binascii.hexlify(machine.unique_id())
 print('Machine unique id: ' + machine_id.decode())
 
-MODES = ["full_elapsed", "full_date", "full_battery", "basic", "flip_full_elapsed", "flip_full_date", "flip_full_battery", "chart", "flip_chart"]
 response = '{}'
 brightness = 32
 emergency = False
 emergencyPause = 0
 currentBackgroudColor = -1
+chartDrawing = False
 
 axp.setLcdBrightness(brightness)
 lcd.orient(lcd.LANDSCAPE)
