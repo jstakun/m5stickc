@@ -223,17 +223,6 @@ def printScreen(clear=False):
   except Exception as e:
     sys.print_exception(e)
 
-  if "ago" in newest and (mode == 0 or mode == 4): 
-    dateStr = newest['ago']
-  elif mode == 2 or mode == 6:
-    batteryLevel = getBatteryLevel()
-    if batteryLevel >= 0:
-       dateStr = "Battery: " + str(getBatteryLevel()) + "%"
-    else: 
-       dateStr = "Battery level unknown"
-  else:   
-    dateStr = newest['date'].replace("T", " ")[:-3] #remove seconds to fit screen
-
   if tooOld: backgroundColor=lcd.DARKGREY; M5Led.on(); emergency=False
   elif sgv <= EMERGENCY_MIN: backgroundColor=lcd.RED; M5Led.on(); emergency=(utime.time() > emergencyPause and not tooOld)  
   elif sgv >= (MIN-10) and sgv < MIN and directionStr.endswith("Up"): backgroundColor=lcd.DARKGREEN; emergency=False; M5Led.off()
@@ -250,7 +239,18 @@ def printScreen(clear=False):
   #battery level emergency
   batteryLevel = getBatteryLevel()
   uptime = utime.time() - startTime  
-  if (batteryLevel < 20 and batteryLevel > 0 and uptime > 300) and (utime.time() > emergencyPause) and not axp.getChargeState(): emergency=True; currentMode=2
+  if (batteryLevel < 20 and batteryLevel > 0 and uptime > 300) and (utime.time() > emergencyPause) and not axp.getChargeState(): emergency=True; currentMode=2; clear=True
+
+  if "ago" in newest and (currentMode == 0 or currentMode == 4): 
+    dateStr = newest['ago']
+  elif currentMode == 2 or currentMode == 6:
+    batteryLevel = getBatteryLevel()
+    if batteryLevel >= 0:
+       dateStr = "Battery: " + str(getBatteryLevel()) + "%"
+    else: 
+       dateStr = "Battery level unknown"
+  else:   
+    dateStr = newest['date'].replace("T", " ")[:-3] #remove seconds to fit screen
 
   lcd.setTextColor(lcd.WHITE)
 
@@ -292,7 +292,7 @@ def printScreen(clear=False):
     lcd.print(sgvStr, 12, 24)
     
     #ago, date or battery
-    if batteryLevel < 20 and emergency == True and currentMode == 2: lcd.setTextColor(lcd.RED)
+    if batteryLevel < 20 and currentMode == 2: lcd.setTextColor(lcd.RED)
     lcd.font(lcd.FONT_DejaVu24, rotate=0)
     f=lcd.fontSize()
     lcd.fillRect(0, 100, 240, 100+f[1], backgroundColor)
@@ -330,7 +330,7 @@ def printScreen(clear=False):
     lcd.print(sgvStr, x, y)
 
     #ago, date or battery
-    if batteryLevel < 20 and emergency == True and currentMode == 6: lcd.setTextColor(lcd.RED)
+    if batteryLevel < 20 and currentMode == 6: lcd.setTextColor(lcd.RED)
     lcd.font(lcd.FONT_DejaVu18, rotate=180)
     x = (int)(240-((240-lcd.textWidth(dateStr))/2))
     if x>216: x=216
