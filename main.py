@@ -197,7 +197,7 @@ def printChart(zoom=1):
     n -= 1
 
 def printScreen(clear=False):
-  global response, mode, brightness, emergency, emergencyPause, MIN, MAX, EMERGENCY_MIN, EMERGENCY_MAX, currentBackgroudColor, screenDrawing
+  global response, mode, brightness, emergency, emergencyPause, MIN, MAX, EMERGENCY_MIN, EMERGENCY_MAX, currentBackgroudColor, screenDrawing, startTime
   
   print('Printing screen in ' + MODES[mode] + ' mode')
   waitTime = 0.0
@@ -223,7 +223,6 @@ def printScreen(clear=False):
   except Exception as e:
     sys.print_exception(e)
 
-  #if not tooOld and "ago" in newest and (mode == 0 or mode == 4): 
   if "ago" in newest and (mode == 0 or mode == 4): 
     dateStr = newest['ago']
   elif mode == 2 or mode == 6:
@@ -247,6 +246,11 @@ def printScreen(clear=False):
   #if emergency change to one of full modes 
   currentMode = mode
   if emergency==True and (mode==3 or mode==7): currentMode = 0
+  
+  #battery level emergency
+  batteryLevel = getBatteryLevel()
+  uptime = utime.time() - startTime  
+  if (batteryLevel < 20 and batteryLevel > 0 and uptime > 300) and (utime.time() > emergencyPause) and not axp.getChargeState(): emergency=True; currentMode=2
 
   lcd.setTextColor(lcd.WHITE)
 
@@ -287,7 +291,8 @@ def printScreen(clear=False):
     lcd.textClear(12, 24, "888", backgroundColor)
     lcd.print(sgvStr, 12, 24)
     
-    #ago or date
+    #ago, date or battery
+    if batteryLevel < 20 and emergency == True and currentMode == 2: lcd.setTextColor(lcd.RED)
     lcd.font(lcd.FONT_DejaVu24, rotate=0)
     f=lcd.fontSize()
     lcd.fillRect(0, 100, 240, 100+f[1], backgroundColor)
@@ -324,7 +329,8 @@ def printScreen(clear=False):
     lcd.textClear(x-lcd.textWidth("888"), y-lcd.fontSize()[1], "888", backgroundColor)
     lcd.print(sgvStr, x, y)
 
-    #ago or date
+    #ago, date or battery
+    if batteryLevel < 20 and emergency == True and currentMode == 6: lcd.setTextColor(lcd.RED)
     lcd.font(lcd.FONT_DejaVu18, rotate=180)
     x = (int)(240-((240-lcd.textWidth(dateStr))/2))
     if x>216: x=216
@@ -405,15 +411,14 @@ def backendMonitor():
       time.sleep(retry)
 
 def emergencyMonitor():
-  global emergency, beeper, response, USE_BEEPER, startTime
+  global emergency, beeper, response, USE_BEEPER
   while True:
-    batteryLevel = getBatteryLevel()
-    uptime = utime.time() - startTime
-    if emergency == True or (batteryLevel < 20 and batteryLevel > 0 and uptime > 300):
-      if emergency == True:
-        print('Emergency glucose level ' + str(response[0]['sgv']) + '!!!')
-      elif batteryLevel < 20:
+    if emergency == True:
+      batteryLevel = getBatteryLevel()
+      if batteryLevel < 20:
         print('Low battery level ' + str(batteryLevel) + "%!!!")
+      else:
+        print('Emergency glucose level ' + str(response[0]['sgv']) + '!!!')
       if USE_BEEPER == 1:
         beeper.resume()
       M5Led.on()
