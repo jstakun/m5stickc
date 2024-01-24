@@ -45,7 +45,7 @@ def getNtpTime():
 def getDateTuple(date_str):
   [yyyy, mm, dd] = [int(i) for i in date_str.split('T')[0].split('-')]
   [HH, MM, SS] = [int(i) for i in date_str.split('T')[1].split(':')]
-  return (yyyy, mm, dd, HH, MM, SS, 0, 0, 0)
+  return (yyyy, mm, dd, HH, MM, SS, 0, 0, 0)  
 
 def isOlderThan(date_str, mins): 
   global rtc
@@ -107,6 +107,41 @@ def resetMachine(seconds=5):
      printCenteredText('Reset in ' + str(i) + ' sec', backgroundColor=lcd.RED, clear=True)
      time.sleep(1)
   machine.reset()    
+
+def useBeeper():
+  global USE_BEEPER, BEEPER_START_TIME, BEEPER_END_TIME 
+  try:   
+    if USE_BEEPER == 1:
+      d = utime.localtime(0)
+      tm = utime.localtime(utime.time())
+    
+      c = list(d)
+      c[3] = tm[3]
+      c[4] = tm[4]
+      c[5] = tm[5]
+
+      d1 = list(d)
+      [HH, MM, SS] = [int(i) for i in BEEPER_START_TIME.split(':')]
+      d1[3] = HH
+      d1[4] = MM
+      d1[5] = SS
+
+      d2 = list(d)
+      [HH, MM, SS] = [int(i) for i in BEEPER_END_TIME.split(':')]
+      d2[3] = HH
+      d2[4] = MM
+      d2[5] = SS
+      
+      if tuple(d1) < tuple(d2):
+         return tuple(c) > tuple(d1) and tuple(c) < tuple(d2)
+      else:
+         return tuple(c) > tuple(d1) or tuple(c) < tuple(d2)
+    else:
+      return False 
+  except Exception as e:
+    sys.print_exception(e)
+    return True  
+
 
 def printTime(seconds, prefix='', suffix=''):
   m, s = divmod(seconds, 60)
@@ -223,17 +258,6 @@ def printScreen(clear=False):
   except Exception as e:
     sys.print_exception(e)
 
-  if "ago" in newest and (mode == 0 or mode == 4): 
-    dateStr = newest['ago']
-  elif mode == 2 or mode == 6:
-    batteryLevel = getBatteryLevel()
-    if batteryLevel >= 0:
-       dateStr = "Battery: " + str(getBatteryLevel()) + "%"
-    else: 
-       dateStr = "Battery level unknown"
-  else:   
-    dateStr = newest['date'].replace("T", " ")[:-3] #remove seconds to fit screen
-
   if tooOld: backgroundColor=lcd.DARKGREY; M5Led.on(); emergency=False
   elif sgv <= EMERGENCY_MIN: backgroundColor=lcd.RED; M5Led.on(); emergency=(utime.time() > emergencyPause and not tooOld)  
   elif sgv >= (MIN-10) and sgv < MIN and directionStr.endswith("Up"): backgroundColor=lcd.DARKGREEN; emergency=False; M5Led.off()
@@ -250,7 +274,18 @@ def printScreen(clear=False):
   #battery level emergency
   batteryLevel = getBatteryLevel()
   uptime = utime.time() - startTime  
-  if (batteryLevel < 20 and batteryLevel > 0 and uptime > 300) and (utime.time() > emergencyPause) and not axp.getChargeState(): emergency=True; currentMode=2
+  if (batteryLevel < 20 and batteryLevel > 0 and uptime > 300) and (utime.time() > emergencyPause) and not axp.getChargeState(): emergency=True; currentMode=2; clear=True
+
+  if "ago" in newest and (currentMode == 0 or currentMode == 4): 
+    dateStr = newest['ago']
+  elif currentMode == 2 or currentMode == 6:
+    batteryLevel = getBatteryLevel()
+    if batteryLevel >= 0:
+       dateStr = "Battery: " + str(getBatteryLevel()) + "%"
+    else: 
+       dateStr = "Battery level unknown"
+  else:   
+    dateStr = newest['date'].replace("T", " ")[:-3] #remove seconds to fit screen
 
   lcd.setTextColor(lcd.WHITE)
 
@@ -292,7 +327,7 @@ def printScreen(clear=False):
     lcd.print(sgvStr, 12, 24)
     
     #ago, date or battery
-    if batteryLevel < 20 and emergency == True and currentMode == 2: lcd.setTextColor(lcd.RED)
+    if batteryLevel < 20 and currentMode == 2: lcd.setTextColor(lcd.RED)
     lcd.font(lcd.FONT_DejaVu24, rotate=0)
     f=lcd.fontSize()
     lcd.fillRect(0, 100, 240, 100+f[1], backgroundColor)
@@ -330,7 +365,7 @@ def printScreen(clear=False):
     lcd.print(sgvStr, x, y)
 
     #ago, date or battery
-    if batteryLevel < 20 and emergency == True and currentMode == 6: lcd.setTextColor(lcd.RED)
+    if batteryLevel < 20 and currentMode == 6: lcd.setTextColor(lcd.RED)
     lcd.font(lcd.FONT_DejaVu18, rotate=180)
     x = (int)(240-((240-lcd.textWidth(dateStr))/2))
     if x>216: x=216
@@ -411,25 +446,26 @@ def backendMonitor():
       time.sleep(retry)
 
 def emergencyMonitor():
-  global emergency, beeper, response, USE_BEEPER
+  global emergency, beeper, response
   while True:
+    useBeeper = useBeeper()
     if emergency == True:
       batteryLevel = getBatteryLevel()
       if batteryLevel < 20:
         print('Low battery level ' + str(batteryLevel) + "%!!!")
       else:
         print('Emergency glucose level ' + str(response[0]['sgv']) + '!!!')
-      if USE_BEEPER == 1:
+      if useBeeper:
         beeper.resume()
       M5Led.on()
       time.sleep(0.5)
-      if USE_BEEPER == 1:
+      if useBeeper:
         beeper.pause()
       M5Led.off()
       time.sleep(0.5)
     else:
       #print('No emergency')
-      if USE_BEEPER == 1:
+      if useBeeper:
         beeper.pause()
       time.sleep(1)
 
@@ -480,6 +516,8 @@ try:
   EMERGENCY_MAX = config["emergencyMax"] 
   TIMEZONE = config["timezone"]
   USE_BEEPER = config["beeper"]
+  BEEPER_START_TIME = config["beeperStartTime"]
+  BEEPER_END_TIME = config["beeperEndTime"]
 
   if INTERVAL<30: INTERVAL=30
   if MIN<30: MIN=30
@@ -488,7 +526,7 @@ try:
   if EMERGENCY_MAX<100 or MAX>=EMERGENCY_MAX: EMERGENCY_MAX=MAX+10  
   if len(API_ENDPOINT)==0: raise Exception("Empty api-endpoint parameter")
   if len(WIFI)==0: raise Exception("Empty wifi parameter")
-  if USE_BEEPER > 1 or USE_BEEPER < 0: USE_BEEPER=1
+  if USE_BEEPER != 1 and USE_BEEPER != 0: USE_BEEPER=1
 
   beeper = PWM(Pin(2), freq=1000, duty=50)
   beeper.pause()
