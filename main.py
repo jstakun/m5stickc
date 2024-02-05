@@ -108,7 +108,7 @@ def resetMachine(seconds=5):
      time.sleep(1)
   machine.reset()    
 
-def useBeeper():
+def checkBeeper():
   global USE_BEEPER, BEEPER_START_TIME, BEEPER_END_TIME 
   try:   
     if USE_BEEPER == 1:
@@ -131,6 +131,8 @@ def useBeeper():
       d2[3] = HH
       d2[4] = MM
       d2[5] = SS
+
+      #print("Compare d1: " + str(d1) + ", d2: " + str(d2) + ", c: " + str(c))
       
       if tuple(d1) < tuple(d2):
          return tuple(c) > tuple(d1) and tuple(c) < tuple(d2)
@@ -294,7 +296,7 @@ def printScreen(clear=False):
      lcd.clear(backgroundColor)
      currentBackgroudColor = backgroundColor
   else:
-     print("Skipping background clearing")
+     print("Skip background clearing")
   
   if currentMode in range (0,3):  
     #full mode
@@ -448,26 +450,27 @@ def backendMonitor():
 def emergencyMonitor():
   global emergency, beeper, response
   while True:
-    useBeeper = useBeeper()
+    #print('Emergency monitor checking status')
+    useBeeper = checkBeeper()
     if emergency == True:
       batteryLevel = getBatteryLevel()
       if batteryLevel < 20:
         print('Low battery level ' + str(batteryLevel) + "%!!!")
       else:
         print('Emergency glucose level ' + str(response[0]['sgv']) + '!!!')
-      if useBeeper:
+      if useBeeper == True:
         beeper.resume()
       M5Led.on()
       time.sleep(0.5)
-      if useBeeper:
+      if useBeeper == True:
         beeper.pause()
       M5Led.off()
       time.sleep(0.5)
     else:
       #print('No emergency')
-      if useBeeper:
+      if useBeeper == True:
         beeper.pause()
-      time.sleep(1)
+      time.sleep(2)
 
 def mpu6050Monitor():
   global mpu6050, mode, response
@@ -575,7 +578,7 @@ try:
   rtc = machine.RTC()
   tm = utime.localtime(getNtpTime())
   rtc.datetime((tm[0], tm[1], tm[2], tm[6] + 1, tm[3], tm[4], tm[5], 0))
-  print("Current datetime " +  str(rtc.datetime()))
+  print("Current UTC datetime " +  str(rtc.datetime()))
   startTime = utime.time()
 
   printCenteredText("Loading data...", backgroundColor=lcd.DARKGREY) #lcd.DARKGREEN)
