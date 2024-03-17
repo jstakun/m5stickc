@@ -1,0 +1,8 @@
+pip3 install adafruit-ampy
+
+ampy --port /dev/ttyUSB0 put config.json
+
+ampy --port /dev/ttyUSB0 rm dd.jpg
+ampy --port /dev/ttyUSB0 ls /flash
+
+screen -L /dev/ttyUSB0 115200

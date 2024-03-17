@@ -144,7 +144,6 @@ def checkBeeper():
     sys.print_exception(e)
     return True  
 
-
 def printTime(seconds, prefix='', suffix=''):
   m, s = divmod(seconds, 60)
   h, m = divmod(m, 60)
@@ -276,7 +275,10 @@ def printScreen(clear=False):
   #battery level emergency
   batteryLevel = getBatteryLevel()
   uptime = utime.time() - startTime  
-  if (batteryLevel < 20 and batteryLevel > 0 and uptime > 300) and (utime.time() > emergencyPause) and not axp.getChargeState(): emergency=True; currentMode=2; clear=True
+  if (batteryLevel < 20 and batteryLevel > 0 and uptime > 300) and (utime.time() > emergencyPause) and not axp.getChargeState(): 
+    emergency=True; 
+    if currentMode!=6: currentMode=2; 
+    clear=True
 
   if "ago" in newest and (currentMode == 0 or currentMode == 4): 
     dateStr = newest['ago']
