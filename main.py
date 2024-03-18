@@ -381,6 +381,7 @@ def printScreen(clear=False, expiredData=False):
     #chart
     printChart()
     currentBackgroudColor = -1
+  print("----------------------------")  
   screenDrawing = False  
 
 def onBtnAPressed():
@@ -417,11 +418,14 @@ def backendMonitor():
       print('Battery level: ' + str(getBatteryLevel()) + '%')
       print('Free memory: ' + str(gc.mem_free()) + ' bytes')
       printTime((utime.time() - startTime), prefix='Uptime is')
+      print('Calling backend ...')
+      s = utime.time()
       response = urequests.get(API_ENDPOINT + "/entries.json?count=10",headers={'api-secret': API_TOKEN,'accept-language': LOCALE,'accept-charset': 'ascii', 'x-gms-tz': TIMEZONE}).json()
+      printTime((utime.time() - s), prefix='Response received in')
       print('Sgv:', response[0]['sgv'])
-      print('Read:', response[0]['date'])
       print('Direction:', response[0]['direction'])
-
+      print('Read: ' + response[0]['date'] + ' (' + TIMEZONE + ')')
+      
       d = OrderedDict()
       seconds = -1
       for index, entry in enumerate(response):
