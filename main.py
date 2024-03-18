@@ -277,8 +277,9 @@ def printScreen(clear=False, expiredData=False):
   batteryLevel = getBatteryLevel()
   uptime = utime.time() - startTime  
   if (batteryLevel < 20 and batteryLevel > 0 and uptime > 300) and (utime.time() > emergencyPause) and not axp.getChargeState(): 
-    emergency=True; 
-    if currentMode!=6: currentMode=2; 
+    emergency=True
+    if currentMode < 4 or currentMode == 7: currentMode = 2
+    else: currentMode = 6
     clear=True
 
   if "ago" in newest and (currentMode == 0 or currentMode == 4): 
