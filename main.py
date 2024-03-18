@@ -232,7 +232,7 @@ def printChart(zoom=1):
       lcd.line(p[0], p[1],points[n-1][0],points[n-1][1], color=lcd.BLACK) 
     n -= 1
 
-def printScreen(clear=False):
+def printScreen(clear=False, expiredData=False):
   global response, mode, brightness, emergency, emergencyPause, MIN, MAX, EMERGENCY_MIN, EMERGENCY_MAX, currentBackgroudColor, screenDrawing, startTime
   
   print('Printing screen in ' + MODES[mode] + ' mode')
@@ -253,11 +253,12 @@ def printScreen(clear=False):
 
   directionStr = newest['direction']
 
-  tooOld = False
-  try:
-    tooOld = isOlderThan(newest['date'], 30)
-  except Exception as e:
-    sys.print_exception(e)
+  tooOld = expiredData
+  if tooOld == False:
+   try:
+     tooOld = isOlderThan(newest['date'], 30)
+   except Exception as e:
+     sys.print_exception(e)
 
   if tooOld: backgroundColor=lcd.DARKGREY; M5Led.on(); emergency=False
   elif sgv <= EMERGENCY_MIN: backgroundColor=lcd.RED; M5Led.on(); emergency=(utime.time() > emergencyPause and not tooOld)  
@@ -331,7 +332,7 @@ def printScreen(clear=False):
     lcd.print(sgvStr, 12, 24)
     
     #ago, date or battery
-    if batteryLevel < 20 and currentMode == 2: lcd.setTextColor(lcd.RED)
+    if batteryLevel < 20 and (currentMode == 2 or currentMode == 6): lcd.setTextColor(lcd.RED)
     lcd.font(lcd.FONT_DejaVu24, rotate=0)
     f=lcd.fontSize()
     lcd.fillRect(0, 100, 240, 100+f[1], backgroundColor)
@@ -410,6 +411,7 @@ def onBtnBPressed():
 
 def backendMonitor():
   global response, INTERVAL, API_ENDPOINT, API_TOKEN, LOCALE, TIMEZONE, startTime, sgvDict
+  backendRetry = (int)(INTERVAL/4)
   while True:
     try:
       print('Battery level: ' + str(getBatteryLevel()) + '%')
@@ -444,10 +446,10 @@ def backendMonitor():
       time.sleep(INTERVAL)
     except Exception as e:
       sys.print_exception(e)
-      retry = (int)(INTERVAL/4)
       print('Battery level: ' + str(getBatteryLevel()) + '%')
-      print('Network error. Retry in ' + str(retry) + ' sec...')
-      time.sleep(retry)
+      print('Network error. Retry in ' + str(backendRetry) + ' sec...')
+      printScreen(expiredData=True)
+      time.sleep(backendRetry)
 
 def emergencyMonitor():
   global emergency, beeper, response
