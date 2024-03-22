@@ -1,3 +1,5 @@
+Download burner tool: https://docs.m5stack.com/en/download
+
 pip3 install adafruit-ampy
 
 ampy --port /dev/ttyUSB0 put config.json

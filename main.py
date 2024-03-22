@@ -12,9 +12,10 @@ import gc
 import deviceCfg
 import wifiCfg
 import ubinascii
-from machine import Pin, PWM
+from machine import Pin, PWM, RTC
 from collections import OrderedDict
 from imu import IMU
+import math
 
 EMERGENCY_PAUSE_INTERVAL = 1800  #sec = 30 mins
 MODES = ["full_elapsed", "full_date", "full_battery", "basic", "flip_full_elapsed", "flip_full_date", "flip_full_battery", "chart", "flip_chart"]
@@ -166,12 +167,38 @@ def printCenteredText(msg, font=lcd.FONT_DejaVu24, backgroundColor=lcd.BLACK, te
   else:
     lcd.print(msg, (int)((240-w)/2), (int)(80-f[1]))
 
-def printDirection(x, y, direction, arrowColor, fillColor=lcd.WHITE):
+def printDirection(x, y, xshift=0, yshift=0, rotateAngle=0, arrowColor=lcd.WHITE, fillColor=lcd.WHITE):
   lcd.circle(x, y, 40, fillcolor=fillColor, color=fillColor)
-  lcd.triangle(direction[0], direction[1], direction[2], direction[3], direction[4], direction[5], fillcolor=arrowColor, color=arrowColor)
-  if len(direction) == 12:
-    lcd.triangle(direction[6], direction[7], direction[8], direction[9], direction[10], direction[11], fillcolor=arrowColor, color=arrowColor)
-  lcd.circle(direction[0], direction[1], 4, fillcolor=arrowColor, color=arrowColor)
+  r = drawTriangle(x+xshift, y+yshift, arrowColor, rotateAngle)
+  lcd.circle(int(r[0]), int(r[1]), 4, fillcolor=arrowColor, color=arrowColor)
+
+def printDoubleDirection(x, y, ytop=0, ybottom=0, rotateAngle=0, arrowColor=lcd.WHITE, fillColor=lcd.WHITE):
+  lcd.circle(x, y, 40, fillcolor=fillColor, color=fillColor)
+  drawTriangle(x, y+ytop, arrowColor, rotateAngle)
+  r = drawTriangle(x, y+ybottom, arrowColor, rotateAngle) 
+  #lcd.circle(int(r[0]), int(r[1]), 4, fillcolor=arrowColor, color=arrowColor)
+
+def drawTriangle(centerX, centerY, arrowColor, rotateAngle=90, width=44, height=44):
+  angle = math.radians(rotateAngle) # Angle to rotate
+
+  # Vertex's coordinates before rotating
+  x1 = centerX + width / 2
+  y1 = centerY
+  x2 = centerX - width / 2
+  y2 = centerY + height / 2
+  x3 = centerX - width / 2
+  y3 = centerY - height / 2
+
+  # Rotating
+  x1r = ((x1 - centerX) * math.cos(angle) - (y1 - centerY) * math.sin(angle) + centerX)
+  y1r = ((x1 - centerX) * math.sin(angle) + (y1 - centerY) * math.cos(angle) + centerY)
+  x2r = ((x2 - centerX) * math.cos(angle) - (y2 - centerY) * math.sin(angle) + centerX)
+  y2r = ((x2 - centerX) * math.sin(angle) + (y2 - centerY) * math.cos(angle) + centerY)
+  x3r = ((x3 - centerX) * math.cos(angle) - (y3 - centerY) * math.sin(angle) + centerX)
+  y3r = ((x3 - centerX) * math.sin(angle) + (y3 - centerY) * math.cos(angle) + centerY)
+
+  lcd.triangle(int(x1r), int(y1r), int(x2r), int(y2r), int(x3r), int(y3r), fillcolor=arrowColor, color=arrowColor)
+  return x1r, y1r, x2r, y2r, x3r, y3r 
 
 def printChart(zoom=1):
   global sgvDict, MIN, MAX
@@ -309,23 +336,19 @@ def printScreen(clear=False, expiredData=False):
     x=178
     y=48
     
-    directions = {'Flat': (x+25, y, x-15, y-20, x-15, y+20), 
-        'FortyFiveDown': (x+15, y+20, x+15, y-20, x-25, y),
-        'FortyFiveUp': (x+15, y-20, x+15, y+20, x-25, y), 
-        'DoubleDown': (x, y+10, x-20, y-25, x+20, y-25, x, y+30, x-20, y, x+20, y),
-        'DoubleUp': (x, y-30, x-20, y-5, x+20, y-5, x, y-7, x-20, y+18, x+20, y+18), 
-        'SingleUp': (x, y-25, x-20, y+15, x+20, y+15),
-        'SingleDown': (x, y+25, x-20, y-15, x+20, y-15)} 
-    
-    direction = directions[directionStr] 
-    
     if not tooOld and directionStr == 'DoubleUp' and sgv+20>=MAX: arrowColor = lcd.RED
     elif not tooOld and directionStr == 'DoubleDown' and sgv-20<=MIN: arrowColor = lcd.RED
     elif not tooOld and directionStr == 'SingleUp' and sgv+10>=MAX: arrowColor = lcd.ORANGE
     elif not tooOld and directionStr == 'SingleDown' and sgv-10<=MIN: arrowColor = lcd.ORANGE
     else: arrowColor = backgroundColor  
-        
-    printDirection(x, y, direction, arrowColor=arrowColor)
+
+    if directionStr == 'DoubleUp': printDoubleDirection(x, y, ytop=-10, ybottom=6, rotateAngle=-90, arrowColor=arrowColor)
+    elif directionStr == 'DoubleDown': printDoubleDirection(x, y, ytop=-10, ybottom=6, rotateAngle=90, arrowColor=arrowColor) 
+    elif directionStr == 'SingleUp': printDirection(x, y, xshift=2, rotateAngle=-90, arrowColor=arrowColor)
+    elif directionStr == 'SingleDown': printDirection(x, y, xshift=2, rotateAngle=90, arrowColor=arrowColor)
+    elif directionStr == 'Flat': printDirection(x, y, xshift=2, rotateAngle=0, arrowColor=arrowColor)
+    elif directionStr == 'FortyFiveUp': printDirection(x, y, xshift=2, rotateAngle=-45, arrowColor=arrowColor)
+    elif directionStr == 'FortyFiveDown': printDirection(x, y, xshift=2, rotateAngle=45, arrowColor=arrowColor)
 
     #sgv
     lcd.font(lcd.FONT_DejaVu56, rotate=0)
@@ -344,24 +367,20 @@ def printScreen(clear=False, expiredData=False):
     #direction
     x=58
     y=52
-    
-    directions = {'Flat': (x-25, y, x+15, y-20, x+15, y+20), 
-        'FortyFiveDown': (x-15, y-20, x-15, y+20, x+25, y),
-        'FortyFiveUp': (x-15, y+20, x-15, y-20, x+25, y), 
-        'DoubleDown': (x, y-30, x-20, y-5, x+20, y-5, x, y-7, x-20, y+18, x+20, y+18),
-        'DoubleUp': (x, y+30, x-20, y, x+20, y, x, y+10, x-20, y-25, x+20, y-25), 
-        'SingleUp': (x, y+25, x-20, y-15, x+20, y-15),
-        'SingleDown': (x, y-25, x-20, y+15, x+20, y+15)} 
-    
-    direction = directions[directionStr] 
-    
+        
     if not tooOld and directionStr == 'DoubleUp' and sgv+20>=MAX: arrowColor = lcd.RED
     elif not tooOld and directionStr == 'DoubleDown' and sgv-20<=MIN: arrowColor = lcd.RED
     elif not tooOld and directionStr == 'SingleUp' and sgv+10>=MAX: arrowColor = lcd.ORANGE
     elif not tooOld and directionStr == 'SingleDown' and sgv-10<=MIN: arrowColor = lcd.ORANGE
     else: arrowColor = backgroundColor   
     
-    printDirection(x, y, direction, arrowColor=arrowColor)
+    if directionStr == 'DoubleUp': printDoubleDirection(x, y, ytop=-6, ybottom=10, rotateAngle=90, arrowColor=arrowColor)
+    elif directionStr == 'DoubleDown': printDoubleDirection(x, y, ytop=-6, ybottom=10, rotateAngle=-90, arrowColor=arrowColor) 
+    elif directionStr == 'SingleUp': printDirection(x, y, xshift=-2, rotateAngle=90, arrowColor=arrowColor)
+    elif directionStr == 'SingleDown': printDirection(x, y, xshift=-2, rotateAngle=-90, arrowColor=arrowColor)
+    elif directionStr == 'Flat': printDirection(x, y, xshift=-2, rotateAngle=180, arrowColor=arrowColor)
+    elif directionStr == 'FortyFiveUp': printDirection(x, y, xshift=-2, rotateAngle=135, arrowColor=arrowColor)
+    elif directionStr == 'FortyFiveDown': printDirection(x, y, xshift=-2, rotateAngle=-135, arrowColor=arrowColor)
 
     #sgv
     lcd.font(lcd.FONT_DejaVu56, rotate=180)
@@ -486,22 +505,24 @@ def mpu6050Monitor():
   while True:
     acceleration = mpu6050.acceleration
     hasResponse = (response != '{}')
-    if hasResponse and acceleration[0] > 0 and mode in range(0,3): mode += 4; printScreen(clear=True) #change to 'Flip mode' #4,5,6
-    elif hasResponse and acceleration[0] < 0 and mode in range(4,7): mode -= 4; printScreen(clear=True) #change to 'Normal mode' #0,1,2
-    elif hasResponse and acceleration[0] > 0 and mode == 7: mode = 8; printScreen(clear=True)
-    elif hasResponse and acceleration[0] < 0 and mode == 8: mode = 7; printScreen(clear=True)
+    if hasResponse and acceleration[0] > 0.1 and mode in range(0,3): mode += 4; printScreen(clear=True) #change to 'Flip mode' #4,5,6
+    elif hasResponse and acceleration[0] < -0.1 and mode in range(4,7): mode -= 4; printScreen(clear=True) #change to 'Normal mode' #0,1,2
+    elif hasResponse and acceleration[0] > 0.1 and mode == 7: mode = 8; printScreen(clear=True)
+    elif hasResponse and acceleration[0] < -0.1 and mode == 8: mode = 7; printScreen(clear=True)
+    #print("Acc:", str(acceleration))
     time.sleep(0.5)
         
 ########################################    
 
 print('Starting...')
-print('APIKEY: ' + deviceCfg.get_apikey())
+print('APIKEY:', deviceCfg.get_apikey())
 macaddr=wifiCfg.wlan_sta.config('mac')
 macaddr='{:02x}:{:02x}:{:02x}:{:02x}:{:02x}:{:02x}'.format(*macaddr)
-print('MAC Adddress: ' + macaddr)
+print('MAC address:', macaddr)
 print('Free memory: ' + str(gc.mem_free()) + ' bytes')
 machine_id = binascii.hexlify(machine.unique_id())
-print('Machine unique id: ' + machine_id.decode())
+print('Machine unique id:', machine_id.decode())
+print('CPU frequency:', machine.freq())
 
 response = '{}'
 brightness = 32
@@ -556,6 +577,9 @@ except Exception as e:
     printCenteredText("Restart required!", backgroundColor=lcd.RED, clear=True)
     time.sleep(2)
 
+#this doesn't work
+#machine.freq(20000000)    
+
 nic = network.WLAN(network.STA_IF)
 nic.active(True)
 
@@ -584,7 +608,7 @@ print("")
 printCenteredText("Setting time...", backgroundColor=lcd.DARKGREY) #lcd.GREENYELLOW)
 
 try: 
-  rtc = machine.RTC()
+  rtc = RTC()
   tm = utime.localtime(getNtpTime())
   rtc.datetime((tm[0], tm[1], tm[2], tm[6] + 1, tm[3], tm[4], tm[5], 0))
   print("Current UTC datetime " +  str(rtc.datetime()))
