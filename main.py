@@ -170,7 +170,7 @@ def printCenteredText(msg, font=lcd.FONT_DejaVu24, backgroundColor=lcd.BLACK, te
 def printDirection(x, y, xshift=0, yshift=0, rotateAngle=0, arrowColor=lcd.WHITE, fillColor=lcd.WHITE):
   lcd.circle(x, y, 40, fillcolor=fillColor, color=fillColor)
   r = drawTriangle(x+xshift, y+yshift, arrowColor, rotateAngle)
-  lcd.circle(int(r[0]), int(r[1]), 4, fillcolor=arrowColor, color=arrowColor)
+  #lcd.circle(int(r[0]), int(r[1]), 4, fillcolor=arrowColor, color=arrowColor)
 
 def printDoubleDirection(x, y, ytop=0, ybottom=0, rotateAngle=0, arrowColor=lcd.WHITE, fillColor=lcd.WHITE):
   lcd.circle(x, y, 40, fillcolor=fillColor, color=fillColor)
@@ -197,7 +197,8 @@ def drawTriangle(centerX, centerY, arrowColor, rotateAngle=90, width=44, height=
   x3r = ((x3 - centerX) * math.cos(angle) - (y3 - centerY) * math.sin(angle) + centerX)
   y3r = ((x3 - centerX) * math.sin(angle) + (y3 - centerY) * math.cos(angle) + centerY)
 
-  lcd.triangle(int(x1r), int(y1r), int(x2r), int(y2r), int(x3r), int(y3r), fillcolor=arrowColor, color=arrowColor)
+  lcd.fillTriangle(int(x1r), int(y1r), int(x2r), int(y2r), int(x3r), int(y3r), arrowColor)
+  #lcd.triangle(int(x1r), int(y1r), int(x2r), int(y2r), int(x3r), int(y3r), fillcolor=arrowColor, color=arrowColor)
   return x1r, y1r, x2r, y2r, x3r, y3r 
 
 def printChart(zoom=1):
@@ -275,7 +276,7 @@ def printScreen(clear=False, expiredData=False):
 
   newest = response[0]
   sgv = newest['sgv']
-  sgvStr = str(newest['sgv'])
+  sgvStr = str(sgv)
   if sgv < 100: sgvStr = " " + sgvStr
 
   directionStr = newest['direction']
@@ -298,7 +299,7 @@ def printScreen(clear=False, expiredData=False):
 
   #if emergency change to one of full modes 
   currentMode = mode
-  if emergency==True and (mode==3 or mode==7): currentMode = 0
+  if emergency==True and (mode == 3 or mode == 7): currentMode = 0
   
   #battery level emergency
   batteryLevel = getBatteryLevel()
@@ -342,13 +343,13 @@ def printScreen(clear=False, expiredData=False):
     elif not tooOld and directionStr == 'SingleDown' and sgv-10<=MIN: arrowColor = lcd.ORANGE
     else: arrowColor = backgroundColor  
 
-    if directionStr == 'DoubleUp': printDoubleDirection(x, y, ytop=-10, ybottom=6, rotateAngle=-90, arrowColor=arrowColor)
-    elif directionStr == 'DoubleDown': printDoubleDirection(x, y, ytop=-10, ybottom=6, rotateAngle=90, arrowColor=arrowColor) 
-    elif directionStr == 'SingleUp': printDirection(x, y, xshift=2, rotateAngle=-90, arrowColor=arrowColor)
-    elif directionStr == 'SingleDown': printDirection(x, y, xshift=2, rotateAngle=90, arrowColor=arrowColor)
-    elif directionStr == 'Flat': printDirection(x, y, xshift=2, rotateAngle=0, arrowColor=arrowColor)
-    elif directionStr == 'FortyFiveUp': printDirection(x, y, xshift=2, rotateAngle=-45, arrowColor=arrowColor)
-    elif directionStr == 'FortyFiveDown': printDirection(x, y, xshift=2, rotateAngle=45, arrowColor=arrowColor)
+    if directionStr == 'DoubleUp': printDoubleDirection(x, y, ytop=-11, ybottom=5, rotateAngle=-90, arrowColor=arrowColor)
+    elif directionStr == 'DoubleDown': printDoubleDirection(x, y, ytop=-11, ybottom=5, rotateAngle=90, arrowColor=arrowColor) 
+    elif directionStr == 'SingleUp': printDirection(x, y, xshift=0, yshift=-4, rotateAngle=-90, arrowColor=arrowColor)
+    elif directionStr == 'SingleDown': printDirection(x, y, xshift=0, yshift=4, rotateAngle=90, arrowColor=arrowColor)
+    elif directionStr == 'Flat': printDirection(x, y, xshift=4, rotateAngle=0, arrowColor=arrowColor)
+    elif directionStr == 'FortyFiveUp': printDirection(x, y, xshift=4, yshift=-4, rotateAngle=-45, arrowColor=arrowColor)
+    elif directionStr == 'FortyFiveDown': printDirection(x, y, xshift=4, yshift=4, rotateAngle=45, arrowColor=arrowColor)
 
     #sgv
     lcd.font(lcd.FONT_DejaVu56, rotate=0)
@@ -374,19 +375,19 @@ def printScreen(clear=False, expiredData=False):
     elif not tooOld and directionStr == 'SingleDown' and sgv-10<=MIN: arrowColor = lcd.ORANGE
     else: arrowColor = backgroundColor   
     
-    if directionStr == 'DoubleUp': printDoubleDirection(x, y, ytop=-6, ybottom=10, rotateAngle=90, arrowColor=arrowColor)
-    elif directionStr == 'DoubleDown': printDoubleDirection(x, y, ytop=-6, ybottom=10, rotateAngle=-90, arrowColor=arrowColor) 
-    elif directionStr == 'SingleUp': printDirection(x, y, xshift=-2, rotateAngle=90, arrowColor=arrowColor)
-    elif directionStr == 'SingleDown': printDirection(x, y, xshift=-2, rotateAngle=-90, arrowColor=arrowColor)
-    elif directionStr == 'Flat': printDirection(x, y, xshift=-2, rotateAngle=180, arrowColor=arrowColor)
-    elif directionStr == 'FortyFiveUp': printDirection(x, y, xshift=-2, rotateAngle=135, arrowColor=arrowColor)
-    elif directionStr == 'FortyFiveDown': printDirection(x, y, xshift=-2, rotateAngle=-135, arrowColor=arrowColor)
+    if directionStr == 'DoubleUp': printDoubleDirection(x, y, ytop=-5, ybottom=11, rotateAngle=90, arrowColor=arrowColor)
+    elif directionStr == 'DoubleDown': printDoubleDirection(x, y, ytop=-5, ybottom=11, rotateAngle=-90, arrowColor=arrowColor) 
+    elif directionStr == 'SingleUp': printDirection(x, y, xshift=0, yshift=4, rotateAngle=90, arrowColor=arrowColor)
+    elif directionStr == 'SingleDown': printDirection(x, y, xshift=0, yshift=-4, rotateAngle=-90, arrowColor=arrowColor)
+    elif directionStr == 'Flat': printDirection(x, y, xshift=-4, rotateAngle=180, arrowColor=arrowColor)
+    elif directionStr == 'FortyFiveUp': printDirection(x, y, xshift=-4, yshift=4, rotateAngle=135, arrowColor=arrowColor)
+    elif directionStr == 'FortyFiveDown': printDirection(x, y, xshift=-4, yshift=-4, rotateAngle=-135, arrowColor=arrowColor)
 
     #sgv
     lcd.font(lcd.FONT_DejaVu56, rotate=180)
     x = 206
     y = 78
-    lcd.textClear(x-lcd.textWidth("888"), y-lcd.fontSize()[1], "888", backgroundColor)
+    lcd.textClear(x-lcd.textWidth("888")+4, y-lcd.fontSize()[1]+4, "888", backgroundColor)
     lcd.print(sgvStr, x, y)
 
     #ago, date or battery
@@ -445,7 +446,9 @@ def backendMonitor():
       print('Sgv:', response[0]['sgv'])
       print('Direction:', response[0]['direction'])
       print('Read: ' + response[0]['date'] + ' (' + TIMEZONE + ')')
-      
+      sgvDiff = response[0]['sgv'] - response[1]['sgv']
+      print('Sgv diff from previous read:', sgvDiff)
+
       d = OrderedDict()
       seconds = -1
       for index, entry in enumerate(response):
