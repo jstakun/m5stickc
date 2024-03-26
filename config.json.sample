@@ -10,7 +10,6 @@
     "max": 180, //highest safe glucose level < emergencyMax, accepted value 100 or more 
     "emergencyMin": 50, //emergency low glucose level which will trigger beeper and blinking led, accepted value 30 or more
     "emergencyMax": 250, //emergency high glucose level which will trigger beeper and blinking led, accepted value 100 or more
-    //below entries are only relevant if you use my managed Nightscout server as backend
-    "locale": "en-US", //locale for printing elapsed time information on the screen
-    "timezone": "GMT+1" //time zone of gcm device in GMT+/-Hours format
+    "locale": "en-US", //locale for printing information on the screen
+    "timezone": "GMT+1:00" //time zone of gcm device in GMT+/-Hours:Minutes format
 }

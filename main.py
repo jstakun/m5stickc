@@ -16,6 +16,7 @@ from machine import Pin, PWM, RTC
 from collections import OrderedDict
 from imu import IMU
 import math
+import re
 
 EMERGENCY_PAUSE_INTERVAL = 1800  #sec = 30 mins
 MODES = ["full_elapsed", "full_date", "full_battery", "basic", "flip_full_elapsed", "flip_full_date", "flip_full_battery", "chart", "flip_chart"]
@@ -49,11 +50,11 @@ def getDateTuple(date_str):
   return (yyyy, mm, dd, HH, MM, SS, 0, 0, 0)  
 
 def isOlderThan(date_str, mins): 
-  global rtc
+  global secondsDiff
   the_date = getDateTuple(date_str)
-  seconds = utime.mktime(the_date) #UTC+1
+  seconds = utime.mktime(the_date) 
   now = utime.time() #UTC
-  diff = (now - seconds + 3600)
+  diff = (now - seconds + secondsDiff)
   printTime(diff, prefix='Entry read', suffix='ago')
   return diff > (60 * mins) 
 
@@ -110,11 +111,12 @@ def resetMachine(seconds=5):
   machine.reset()    
 
 def checkBeeper():
-  global USE_BEEPER, BEEPER_START_TIME, BEEPER_END_TIME 
+  global USE_BEEPER, BEEPER_START_TIME, BEEPER_END_TIME, secondsDiff 
   try:   
     if USE_BEEPER == 1:
+      #TODO add timezone to tm
       d = utime.localtime(0)
-      tm = utime.localtime(utime.time())
+      tm = utime.localtime(utime.time() + secondsDiff) 
     
       c = list(d)
       c[3] = tm[3]
@@ -280,7 +282,7 @@ def printScreen(clear=False, expiredData=False):
   if sgv < 100: sgvStr = " " + sgvStr
 
   directionStr = newest['direction']
-
+  
   tooOld = expiredData
   if tooOld == False:
    try:
@@ -343,8 +345,8 @@ def printScreen(clear=False, expiredData=False):
     elif not tooOld and directionStr == 'SingleDown' and sgv-10<=MIN: arrowColor = lcd.ORANGE
     else: arrowColor = backgroundColor  
 
-    if directionStr == 'DoubleUp': printDoubleDirection(x, y, ytop=-11, ybottom=5, rotateAngle=-90, arrowColor=arrowColor)
-    elif directionStr == 'DoubleDown': printDoubleDirection(x, y, ytop=-11, ybottom=5, rotateAngle=90, arrowColor=arrowColor) 
+    if directionStr == 'DoubleUp': printDoubleDirection(x, y, ytop=-12, ybottom=4, rotateAngle=-90, arrowColor=arrowColor)
+    elif directionStr == 'DoubleDown': printDoubleDirection(x, y, ytop=-4, ybottom=12, rotateAngle=90, arrowColor=arrowColor) 
     elif directionStr == 'SingleUp': printDirection(x, y, xshift=0, yshift=-4, rotateAngle=-90, arrowColor=arrowColor)
     elif directionStr == 'SingleDown': printDirection(x, y, xshift=0, yshift=4, rotateAngle=90, arrowColor=arrowColor)
     elif directionStr == 'Flat': printDirection(x, y, xshift=4, rotateAngle=0, arrowColor=arrowColor)
@@ -375,8 +377,8 @@ def printScreen(clear=False, expiredData=False):
     elif not tooOld and directionStr == 'SingleDown' and sgv-10<=MIN: arrowColor = lcd.ORANGE
     else: arrowColor = backgroundColor   
     
-    if directionStr == 'DoubleUp': printDoubleDirection(x, y, ytop=-5, ybottom=11, rotateAngle=90, arrowColor=arrowColor)
-    elif directionStr == 'DoubleDown': printDoubleDirection(x, y, ytop=-5, ybottom=11, rotateAngle=-90, arrowColor=arrowColor) 
+    if directionStr == 'DoubleUp': printDoubleDirection(x, y, ytop=-4, ybottom=12, rotateAngle=90, arrowColor=arrowColor)
+    elif directionStr == 'DoubleDown': printDoubleDirection(x, y, ytop=-12, ybottom=4, rotateAngle=-90, arrowColor=arrowColor) 
     elif directionStr == 'SingleUp': printDirection(x, y, xshift=0, yshift=4, rotateAngle=90, arrowColor=arrowColor)
     elif directionStr == 'SingleDown': printDirection(x, y, xshift=0, yshift=-4, rotateAngle=-90, arrowColor=arrowColor)
     elif directionStr == 'Flat': printDirection(x, y, xshift=-4, rotateAngle=180, arrowColor=arrowColor)
@@ -563,7 +565,14 @@ try:
   if len(API_ENDPOINT)==0: raise Exception("Empty api-endpoint parameter")
   if len(WIFI)==0: raise Exception("Empty wifi parameter")
   if USE_BEEPER != 1 and USE_BEEPER != 0: USE_BEEPER=1
+  if re.search("^GMT[+-]((0?[0-9]|1[0-1]):([0-5][0-9])|12:00)$",TIMEZONE)==None: TIMEZONE="GMT+0:00"
 
+  timeStr = TIMEZONE[4:]
+  [HH, MM] = [int(i) for i in timeStr.split(':')]
+  secondsDiff = HH * 3600 + MM * 60
+  if TIMEZONE[3] == "-": secondsDiff = secondsDiff * -1
+  print('Local time seconds difference:', secondsDiff) 
+  
   beeper = PWM(Pin(2), freq=1000, duty=50)
   beeper.pause()
 
