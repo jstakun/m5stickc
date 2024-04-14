@@ -114,7 +114,6 @@ def checkBeeper():
   global USE_BEEPER, BEEPER_START_TIME, BEEPER_END_TIME, secondsDiff 
   try:   
     if USE_BEEPER == 1:
-      #TODO add timezone to tm
       d = utime.localtime(0)
       tm = utime.localtime(utime.time() + secondsDiff) 
     
@@ -262,8 +261,8 @@ def printChart(zoom=1):
       lcd.line(p[0], p[1],points[n-1][0],points[n-1][1], color=lcd.BLACK) 
     n -= 1
 
-def printScreen(clear=False, expiredData=False):
-  global response, mode, brightness, emergency, emergencyPause, MIN, MAX, EMERGENCY_MIN, EMERGENCY_MAX, currentBackgroudColor, screenDrawing, startTime
+def printScreen(clear=False):
+  global response, mode, brightness, emergency, emergencyPause, MIN, MAX, EMERGENCY_MIN, EMERGENCY_MAX, currentBackgroudColor, screenDrawing, startTime, OLD_DATA
   
   print('Printing screen in ' + MODES[mode] + ' mode')
   waitTime = 0.0
@@ -283,12 +282,10 @@ def printScreen(clear=False, expiredData=False):
 
   directionStr = newest['direction']
   
-  tooOld = expiredData
-  if tooOld == False:
-   try:
-     tooOld = isOlderThan(newest['date'], 30)
-   except Exception as e:
-     sys.print_exception(e)
+  try:
+    tooOld = isOlderThan(newest['date'], OLD_DATA)
+  except Exception as e:
+    sys.print_exception(e)
 
   if tooOld: backgroundColor=lcd.DARKGREY; M5Led.on(); emergency=False
   elif sgv <= EMERGENCY_MIN: backgroundColor=lcd.RED; M5Led.on(); emergency=(utime.time() > emergencyPause and not tooOld)  
@@ -477,7 +474,7 @@ def backendMonitor():
       sys.print_exception(e)
       print('Battery level: ' + str(getBatteryLevel()) + '%')
       print('Network error. Retry in ' + str(backendRetry) + ' sec...')
-      printScreen(expiredData=True)
+      printScreen()
       time.sleep(backendRetry)
 
 def emergencyMonitor():
@@ -556,6 +553,7 @@ try:
   USE_BEEPER = config["beeper"]
   BEEPER_START_TIME = config["beeperStartTime"]
   BEEPER_END_TIME = config["beeperEndTime"]
+  OLD_DATA = config["oldData"]
 
   if INTERVAL<30: INTERVAL=30
   if MIN<30: MIN=30
@@ -566,6 +564,7 @@ try:
   if len(WIFI)==0: raise Exception("Empty wifi parameter")
   if USE_BEEPER != 1 and USE_BEEPER != 0: USE_BEEPER=1
   if re.search("^GMT[+-]((0?[0-9]|1[0-1]):([0-5][0-9])|12:00)$",TIMEZONE)==None: TIMEZONE="GMT+0:00"
+  if OLD_DATA < 10: OLD_DATA=10
 
   timeStr = TIMEZONE[4:]
   [HH, MM] = [int(i) for i in timeStr.split(':')]
